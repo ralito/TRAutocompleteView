@@ -55,8 +55,8 @@
                                                                                                                                        apiKey:@"INSERT_YOUR_PLACES_API_KEY_HERE"]
                                                          cellFactory:[[TRGoogleMapsAutocompletionCellFactory alloc]
                                                                                                              initWithCellForegroundColor:[UIColor lightGrayColor]
-                                                                                                                                fontSize:14]
-                                                        presentingIn:self];
+                                                                      fontSize:14]
+                                                        presentingIn:self withMode:Popover];
     _autocompleteView.topMargin = -5;
     _autocompleteView.backgroundColor = [UIColor colorWithRed:(27) / 255.0f
                                                         green:(27) / 255.0f

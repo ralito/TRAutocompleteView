@@ -48,43 +48,57 @@
     UITableView *_table;
     id <TRAutocompleteItemsSource> _itemsSource;
     id <TRAutocompletionCellFactory> _cellFactory;
+    
+    SuggestionsList* suggestionsList;
 }
+
+@synthesize suggestionMode;
 
 + (TRAutocompleteView *)autocompleteViewBindedTo:(UITextField *)textField
                                      usingSource:(id <TRAutocompleteItemsSource>)itemsSource
                                      cellFactory:(id <TRAutocompletionCellFactory>)factory
-                                    presentingIn:(UIViewController *)controller
+                                    presentingIn:(UIViewController *)controller withMode:(SuggestionMode)mode
 {
     return [[TRAutocompleteView alloc] initWithFrame:CGRectZero
                                            textField:textField
                                          itemsSource:itemsSource
                                          cellFactory:factory
-                                          controller:controller];
+                                          controller:controller withMode:mode];
 }
 
 - (id)initWithFrame:(CGRect)frame
           textField:(UITextField *)textField
         itemsSource:(id <TRAutocompleteItemsSource>)itemsSource
         cellFactory:(id <TRAutocompletionCellFactory>)factory
-         controller:(UIViewController *)controller
+controller:(UIViewController *)controller withMode:(SuggestionMode)mode
 {
     self = [super initWithFrame:frame];
+    mode = mode;
     if (self)
     {
-        [self loadDefaults];
+        if(mode==Normal){
+            [self loadDefaults];
 
-        _queryTextField = textField;
-        _itemsSource = itemsSource;
-        _cellFactory = factory;
-        _contextController = controller;
+            _queryTextField = textField;
+            _itemsSource = itemsSource;
+            _cellFactory = factory;
+            _contextController = controller;
 
-        _table = [[UITableView alloc] initWithFrame:CGRectZero style:UITableViewStylePlain];
-        _table.backgroundColor = [UIColor clearColor];
-        _table.separatorColor = self.separatorColor;
-        _table.separatorStyle = self.separatorStyle;
-        _table.delegate = self;
-        _table.dataSource = self;
-
+            _table = [[UITableView alloc] initWithFrame:CGRectZero style:UITableViewStylePlain];
+            _table.backgroundColor = [UIColor clearColor];
+            _table.separatorColor = self.separatorColor;
+            _table.separatorStyle = self.separatorStyle;
+            _table.delegate = self;
+            _table.dataSource = self;
+            [self addSubview:_table];
+            
+        }else{
+            
+            suggestionsList = [[SuggestionsList alloc] init];
+            
+            
+        }
+        
         [[NSNotificationCenter defaultCenter]
                                addObserver:self
                                   selector:@selector(queryChanged:)
@@ -99,7 +113,7 @@
                                                      name:UIKeyboardWillHideNotification
                                                    object:nil];
 
-        [self addSubview:_table];
+        
     }
 
     return self;
@@ -117,34 +131,36 @@
 
 - (void)keyboardWasShown:(NSNotification *)notification
 {
-    NSDictionary *info = [notification userInfo];
-    CGSize kbSize = [[info objectForKey:UIKeyboardFrameBeginUserInfoKey] CGRectValue].size;
+    if(suggestionMode==Normal){
+        NSDictionary *info = [notification userInfo];
+        CGSize kbSize = [[info objectForKey:UIKeyboardFrameBeginUserInfoKey] CGRectValue].size;
 
-    CGFloat contextViewHeight = 0;
-    CGFloat kbHeight = 0;
-    if (UIInterfaceOrientationIsPortrait([UIApplication sharedApplication].statusBarOrientation))
-    {
-        contextViewHeight = _contextController.view.frame.size.height;
-        kbHeight = kbSize.height;
+        CGFloat contextViewHeight = 0;
+        CGFloat kbHeight = 0;
+        if (UIInterfaceOrientationIsPortrait([UIApplication sharedApplication].statusBarOrientation))
+        {
+            contextViewHeight = _contextController.view.frame.size.height;
+            kbHeight = kbSize.height;
+        }
+        else if (UIInterfaceOrientationIsLandscape([UIApplication sharedApplication].statusBarOrientation))
+        {
+            contextViewHeight = _contextController.view.frame.size.width;
+            kbHeight = kbSize.width;
+        }
+
+        CGPoint textPosition = [_queryTextField convertPoint:_queryTextField.bounds.origin toView:nil]; //Taking in account Y position of queryTextField relatively to it's Window
+        
+        CGFloat calculatedY = textPosition.y + _queryTextField.frame.size.height + self.topMargin;
+        CGFloat calculatedHeight = contextViewHeight - calculatedY - kbHeight;
+
+        calculatedHeight += _contextController.tabBarController.tabBar.frame.size.height; //keyboard is shown over it, need to compensate
+
+        self.frame = CGRectMake(_queryTextField.frame.origin.x,
+                                calculatedY,
+                                _queryTextField.frame.size.width,
+                                calculatedHeight);
+        _table.frame = CGRectMake(0, 0, self.frame.size.width, self.frame.size.height);
     }
-    else if (UIInterfaceOrientationIsLandscape([UIApplication sharedApplication].statusBarOrientation))
-    {
-        contextViewHeight = _contextController.view.frame.size.width;
-        kbHeight = kbSize.width;
-    }
-
-    CGPoint textPosition = [_queryTextField convertPoint:_queryTextField.bounds.origin toView:nil]; //Taking in account Y position of queryTextField relatively to it's Window
-    
-    CGFloat calculatedY = textPosition.y + _queryTextField.frame.size.height + self.topMargin;
-    CGFloat calculatedHeight = contextViewHeight - calculatedY - kbHeight;
-
-    calculatedHeight += _contextController.tabBarController.tabBar.frame.size.height; //keyboard is shown over it, need to compensate
-
-    self.frame = CGRectMake(_queryTextField.frame.origin.x,
-                            calculatedY,
-                            _queryTextField.frame.size.width,
-                            calculatedHeight);
-    _table.frame = CGRectMake(0, 0, self.frame.size.width, self.frame.size.height);
 }
 
 - (void)keyboardWillHide:(NSNotification *)notification
@@ -157,27 +173,44 @@
 {
     if ([_queryTextField.text length] >= _itemsSource.minimumCharactersToTrigger)
     {
-        [_itemsSource itemsFor:_queryTextField.text whenReady:
-                                                            ^(NSArray *suggestions)
-                                                            {
-                                                                if (_queryTextField.text.length
-                                                                    < _itemsSource.minimumCharactersToTrigger)
+            [_itemsSource itemsFor:_queryTextField.text whenReady:
+                                                                ^(NSArray *suggestions)
                                                                 {
-                                                                    self.suggestions = nil;
-                                                                    [_table reloadData];
-                                                                }
-                                                                else
-                                                                {
-                                                                    self.suggestions = suggestions;
-                                                                    [_table reloadData];
-
-                                                                    if (self.suggestions.count > 0 && !_visible)
+                                                                    if (_queryTextField.text.length
+                                                                        < _itemsSource.minimumCharactersToTrigger)
                                                                     {
-                                                                        [_contextController.view addSubview:self];
-                                                                        _visible = YES;
+                                                                        self.suggestions = nil;
+                                                                        if(suggestionMode==Normal)
+                                                                            [_table reloadData];
+                                                                        else{
+                                                                            suggestionsList.stringsArray=self.suggestions;
+                                                                            
+                                                                        }
                                                                     }
-                                                                }
-                                                            }];
+                                                                    else
+                                                                    {
+                                                                        self.suggestions = suggestions;
+                                                                        if(suggestionMode==Normal){
+                                                                            [_table reloadData];
+
+                                                                            if (self.suggestions.count > 0 && !_visible)
+                                                                            {
+                                                                                [_contextController.view addSubview:self];
+                                                                                _visible = YES;
+                                                                            }
+                                                                        } else {
+                                                                            
+                                                                            // show popover now...
+                                                                            
+                                                                            if (self.suggestions.count > 0){
+                                                                             
+                                                                                [suggestionsList showSuggestionsFor:_queryTextField];
+                                                                                
+                                                                            }
+                                                                            
+                                                                        }
+                                                                    }
+                                                                }];
     }
     else
     {

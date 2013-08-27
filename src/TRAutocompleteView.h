@@ -28,6 +28,12 @@
 //
 
 #import <Foundation/Foundation.h>
+#import "SuggestionsList.h"
+
+typedef enum SuggestionMode : NSUInteger {
+    Normal,
+    Popover
+} SuggestionMode;
 
 @protocol TRAutocompleteItemsSource;
 @protocol TRAutocompletionCellFactory;
@@ -45,9 +51,11 @@
 
 @property(nonatomic) CGFloat topMargin;
 
+@property(readonly) SuggestionMode suggestionMode;
+
 + (TRAutocompleteView *)autocompleteViewBindedTo:(UITextField *)textField
                                      usingSource:(id <TRAutocompleteItemsSource>)itemsSource
                                      cellFactory:(id <TRAutocompletionCellFactory>)factory
-                                    presentingIn:(UIViewController *)controller;
+                                    presentingIn:(UIViewController *)controller withMode:(SuggestionMode)mode;
 
 @end
