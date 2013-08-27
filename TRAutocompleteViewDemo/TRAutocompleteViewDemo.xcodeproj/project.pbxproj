@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		3A398A2917CD4AAB0030BB5D /* SuggestionsList.m in Sources */ = {isa = PBXBuildFile; fileRef = 3A398A2717CD4AAB0030BB5D /* SuggestionsList.m */; };
+		3A398A2B17CD63810030BB5D /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3A398A2A17CD63810030BB5D /* SystemConfiguration.framework */; };
+		3A398A2D17CD63A10030BB5D /* MobileCoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3A398A2C17CD63A10030BB5D /* MobileCoreServices.framework */; };
 		6907605A9F8138C763447546 /* AFImageRequestOperation.m in Sources */ = {isa = PBXBuildFile; fileRef = 690768D5FED7648A8BCFC8C0 /* AFImageRequestOperation.m */; };
 		6907606835FD3267D373C2E5 /* TRGoogleMapsSuggestion.m in Sources */ = {isa = PBXBuildFile; fileRef = 6907621990C7FFD5BD443369 /* TRGoogleMapsSuggestion.m */; };
 		6907637E09CE6E2DEDAC11C6 /* TRGoogleMapsAutocompletionCellFactory.m in Sources */ = {isa = PBXBuildFile; fileRef = 69076D362CA3A53D355CA8FE /* TRGoogleMapsAutocompletionCellFactory.m */; };
@@ -43,6 +45,8 @@
 /* Begin PBXFileReference section */
 		3A398A2717CD4AAB0030BB5D /* SuggestionsList.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SuggestionsList.m; sourceTree = "<group>"; };
 		3A398A2817CD4AAB0030BB5D /* SuggestionsList.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SuggestionsList.h; sourceTree = "<group>"; };
+		3A398A2A17CD63810030BB5D /* SystemConfiguration.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SystemConfiguration.framework; path = System/Library/Frameworks/SystemConfiguration.framework; sourceTree = SDKROOT; };
+		3A398A2C17CD63A10030BB5D /* MobileCoreServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MobileCoreServices.framework; path = System/Library/Frameworks/MobileCoreServices.framework; sourceTree = SDKROOT; };
 		690761032FB6752BE3865BC9 /* TRGoogleMapsSuggestion.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TRGoogleMapsSuggestion.h; path = ../src/TRGoogleMapsSuggestion.h; sourceTree = "<group>"; };
 		690761A93BAD2B56EB2C90B7 /* TRAutocompletionCellFactory.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TRAutocompletionCellFactory.h; path = ../src/TRAutocompletionCellFactory.h; sourceTree = "<group>"; };
 		690761AB4739E5D5F3683817 /* AFXMLRequestOperation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AFXMLRequestOperation.h; path = ../thirdparty/AFNetworking/AFNetworking/AFXMLRequestOperation.h; sourceTree = "<group>"; };
@@ -103,6 +107,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3A398A2D17CD63A10030BB5D /* MobileCoreServices.framework in Frameworks */,
+				3A398A2B17CD63810030BB5D /* SystemConfiguration.framework in Frameworks */,
 				767D03DE16EE228D0051925C /* CoreLocation.framework in Frameworks */,
 				76E6DCB416DE10E500F53C02 /* UIKit.framework in Frameworks */,
 				76E6DCB616DE10E500F53C02 /* Foundation.framework in Frameworks */,
@@ -174,6 +180,8 @@
 		76E6DCA716DE10E500F53C02 = {
 			isa = PBXGroup;
 			children = (
+				3A398A2C17CD63A10030BB5D /* MobileCoreServices.framework */,
+				3A398A2A17CD63810030BB5D /* SystemConfiguration.framework */,
 				76E6DCD916DE128900F53C02 /* src */,
 				76E6DCB916DE10E500F53C02 /* TRAutocompleteViewDemo */,
 				76E6DCB216DE10E500F53C02 /* Frameworks */,
@@ -234,8 +242,8 @@
 		76E6DCD916DE128900F53C02 /* src */ = {
 			isa = PBXGroup;
 			children = (
-				3A398A2717CD4AAB0030BB5D /* SuggestionsList.m */,
 				3A398A2817CD4AAB0030BB5D /* SuggestionsList.h */,
+				3A398A2717CD4AAB0030BB5D /* SuggestionsList.m */,
 				76E6DCDB16DE129C00F53C02 /* TRAutocompleteView.h */,
 				76E6DCDC16DE129C00F53C02 /* TRAutocompleteView.m */,
 				690761762B7F1B27B7986827 /* GoogleMaps */,

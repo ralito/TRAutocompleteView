@@ -29,15 +29,18 @@
 
 #import <Foundation/Foundation.h>
 
-@protocol TRAutocompleteItemsSource <NSObject>
-
-- (NSUInteger)minimumCharactersToTrigger;
-- (void)itemsFor:(NSString *)query whenReady:(void (^)(NSArray *))suggestionsReady;
-
-@end
-
 @protocol TRSuggestionItem <NSObject>
 
 - (NSString *)completionText;
 
 @end
+
+@protocol TRAutocompleteItemsSource <NSObject>
+
+- (NSUInteger)minimumCharactersToTrigger;
+- (void)itemsFor:(NSString *)query whenReady:(void (^)(NSArray *))suggestionsReady;
+
+@property (retain) id<TRSuggestionItem> selectedSuggestion;
+
+@end
+

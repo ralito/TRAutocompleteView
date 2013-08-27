@@ -203,7 +203,7 @@ controller:(UIViewController *)controller withMode:(SuggestionMode)mode
                                                                             // show popover now...
                                                                             
                                                                             if (self.suggestions.count > 0){
-                                                                             
+                                                                                suggestionsList.stringsArray=self.suggestions;
                                                                                 [suggestionsList showSuggestionsFor:_queryTextField];
                                                                                 
                                                                             }

@@ -7,16 +7,19 @@
 //
 
 #import <UIKit/UIKit.h>
+#import "TRAutocompleteItemsSource.h"
 
 @interface SuggestionsList : UITableViewController 
 
--(id)initWithArray:(NSArray*)array;
+-(id)initWithAutocompleteItemSource:(id<TRAutocompleteItemsSource>)itemSource;
 -(void)showSuggestionsFor:(UITextField*)textField shouldChangeCharactersInRange:(NSRange)range replacementString:(NSString*)string;
 -(void)showSuggestionsFor:(UITextField*)textField;
 
-@property(retain)NSArray *stringsArray;
+@property(retain)NSArray *suggestionsArray;
 @property(retain)NSArray *matchedStrings;
 @property(retain)UIPopoverController *popOver;
-
+@property(retain)id<TRAutocompleteItemsSource> itemSource;
+@property(copy) void (^didAutocompleteWith)(id <TRSuggestionItem>);
 @property(assign)UITextField *activeTextField;
+
 @end
