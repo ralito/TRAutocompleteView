@@ -73,16 +73,17 @@
 controller:(UIViewController *)controller withMode:(SuggestionMode)mode
 {
     self = [super initWithFrame:frame];
-    mode = mode;
+    suggestionMode = mode;
+    
+    _queryTextField = textField;
+    _itemsSource = itemsSource;
+    _cellFactory = factory;
+    _contextController = controller;
+    
     if (self)
     {
         if(mode==Normal){
             [self loadDefaults];
-
-            _queryTextField = textField;
-            _itemsSource = itemsSource;
-            _cellFactory = factory;
-            _contextController = controller;
 
             _table = [[UITableView alloc] initWithFrame:CGRectZero style:UITableViewStylePlain];
             _table.backgroundColor = [UIColor clearColor];
@@ -95,7 +96,6 @@ controller:(UIViewController *)controller withMode:(SuggestionMode)mode
         }else{
             
             suggestionsList = [[SuggestionsList alloc] init];
-            
             
         }
         
