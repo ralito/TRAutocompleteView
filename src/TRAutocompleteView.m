@@ -53,24 +53,28 @@
 }
 
 @synthesize suggestionMode;
+@synthesize autocompletionBlock;
 
 + (TRAutocompleteView *)autocompleteViewBindedTo:(UITextField *)textField
                                      usingSource:(id <TRAutocompleteItemsSource>)itemsSource
                                      cellFactory:(id <TRAutocompletionCellFactory>)factory
                                     presentingIn:(UIViewController *)controller withMode:(SuggestionMode)mode
+                                    whenSelectionMade:(didAutocompletionBlock)autocompleteBlock
 {
     return [[TRAutocompleteView alloc] initWithFrame:CGRectZero
                                            textField:textField
                                          itemsSource:itemsSource
                                          cellFactory:factory
-                                          controller:controller withMode:mode];
+                                          controller:controller withMode:mode
+                                          whenSelectionMade:autocompleteBlock
+            ];
 }
 
 - (id)initWithFrame:(CGRect)frame
           textField:(UITextField *)textField
         itemsSource:(id <TRAutocompleteItemsSource>)itemsSource
         cellFactory:(id <TRAutocompletionCellFactory>)factory
-controller:(UIViewController *)controller withMode:(SuggestionMode)mode
+controller:(UIViewController *)controller withMode:(SuggestionMode)mode whenSelectionMade:(didAutocompletionBlock)autocompleteBlock_
 {
     self = [super initWithFrame:frame];
     suggestionMode = mode;
@@ -79,6 +83,7 @@ controller:(UIViewController *)controller withMode:(SuggestionMode)mode
     _itemsSource = itemsSource;
     _cellFactory = factory;
     _contextController = controller;
+    autocompletionBlock=autocompleteBlock_;
     
     if (self)
     {
@@ -96,6 +101,7 @@ controller:(UIViewController *)controller withMode:(SuggestionMode)mode
         }else{
             
             suggestionsList = [[SuggestionsList alloc] init];
+            suggestionsList.autocompleteBlock = autocompletionBlock;
             
         }
         
@@ -255,8 +261,8 @@ controller:(UIViewController *)controller withMode:(SuggestionMode)mode
     _queryTextField.text = self.selectedSuggestion.completionText;
     [_queryTextField resignFirstResponder];
 
-    if (self.didAutocompleteWith)
-        self.didAutocompleteWith(self.selectedSuggestion);
+    if (self.autocompletionBlock)
+        self.autocompletionBlock(self.selectedSuggestion);
 }
 
 - (void)dealloc

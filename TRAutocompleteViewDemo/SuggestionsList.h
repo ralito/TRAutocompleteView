@@ -19,7 +19,7 @@
 @property(retain)NSArray *matchedStrings;
 @property(retain)UIPopoverController *popOver;
 @property(retain)id<TRAutocompleteItemsSource> itemSource;
-@property(copy) void (^didAutocompleteWith)(id <TRSuggestionItem>);
+@property(copy) didAutocompletionBlock autocompletionBlock;
 @property(assign)UITextField *activeTextField;
 
 @end

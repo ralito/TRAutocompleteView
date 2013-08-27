@@ -126,8 +126,8 @@
     _activeTextField.text = [suggestion completionText];
     [_activeTextField resignFirstResponder];
     
-    if (self.didAutocompleteWith)
-        self.didAutocompleteWith(suggestion);
+    if (self.autocompletionBlock)
+        self.autocompletionBlock(suggestion);
     
     
 }

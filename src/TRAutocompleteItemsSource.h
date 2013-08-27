@@ -29,6 +29,8 @@
 
 #import <Foundation/Foundation.h>
 
+typedef void (^didAutocompletionBlock)(id <TRSuggestionItem>);
+
 @protocol TRSuggestionItem <NSObject>
 
 - (NSString *)completionText;

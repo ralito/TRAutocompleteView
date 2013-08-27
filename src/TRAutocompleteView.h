@@ -29,6 +29,7 @@
 
 #import <Foundation/Foundation.h>
 #import "SuggestionsList.h"
+#import "TRAutocompleteItemsSource.h"
 
 typedef enum SuggestionMode : NSUInteger {
     Normal,
@@ -39,12 +40,13 @@ typedef enum SuggestionMode : NSUInteger {
 @protocol TRAutocompletionCellFactory;
 @protocol TRSuggestionItem;
 
+
 @interface TRAutocompleteView : UIView
 
 @property(readonly) id <TRSuggestionItem> selectedSuggestion;
 @property(readonly) NSArray *suggestions;
 
-@property(copy) void (^didAutocompleteWith)(id <TRSuggestionItem>);
+@property(copy) didAutocompletionBlock autocompletionBlock;
 
 @property(nonatomic) UIColor *separatorColor;
 @property(nonatomic) UITableViewCellSeparatorStyle separatorStyle;
@@ -56,6 +58,7 @@ typedef enum SuggestionMode : NSUInteger {
 + (TRAutocompleteView *)autocompleteViewBindedTo:(UITextField *)textField
                                      usingSource:(id <TRAutocompleteItemsSource>)itemsSource
                                      cellFactory:(id <TRAutocompletionCellFactory>)factory
-                                    presentingIn:(UIViewController *)controller withMode:(SuggestionMode)mode;
+                                    presentingIn:(UIViewController *)controller withMode:(SuggestionMode)mode
+                                    whenSelectionMade:(didAutocompletionBlock)autocompleteBlock;
 
 @end
