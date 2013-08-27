@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		3A99818B17CD1F5000A8D339 /* SuggestionsList.m in Sources */ = {isa = PBXBuildFile; fileRef = 3A99818917CD1F4F00A8D339 /* SuggestionsList.m */; };
+		3A398A2917CD4AAB0030BB5D /* SuggestionsList.m in Sources */ = {isa = PBXBuildFile; fileRef = 3A398A2717CD4AAB0030BB5D /* SuggestionsList.m */; };
 		6907605A9F8138C763447546 /* AFImageRequestOperation.m in Sources */ = {isa = PBXBuildFile; fileRef = 690768D5FED7648A8BCFC8C0 /* AFImageRequestOperation.m */; };
 		6907606835FD3267D373C2E5 /* TRGoogleMapsSuggestion.m in Sources */ = {isa = PBXBuildFile; fileRef = 6907621990C7FFD5BD443369 /* TRGoogleMapsSuggestion.m */; };
 		6907637E09CE6E2DEDAC11C6 /* TRGoogleMapsAutocompletionCellFactory.m in Sources */ = {isa = PBXBuildFile; fileRef = 69076D362CA3A53D355CA8FE /* TRGoogleMapsAutocompletionCellFactory.m */; };
@@ -41,8 +41,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		3A99818917CD1F4F00A8D339 /* SuggestionsList.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SuggestionsList.m; sourceTree = "<group>"; };
-		3A99818A17CD1F5000A8D339 /* SuggestionsList.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SuggestionsList.h; sourceTree = "<group>"; };
+		3A398A2717CD4AAB0030BB5D /* SuggestionsList.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SuggestionsList.m; sourceTree = "<group>"; };
+		3A398A2817CD4AAB0030BB5D /* SuggestionsList.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SuggestionsList.h; sourceTree = "<group>"; };
 		690761032FB6752BE3865BC9 /* TRGoogleMapsSuggestion.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TRGoogleMapsSuggestion.h; path = ../src/TRGoogleMapsSuggestion.h; sourceTree = "<group>"; };
 		690761A93BAD2B56EB2C90B7 /* TRAutocompletionCellFactory.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TRAutocompletionCellFactory.h; path = ../src/TRAutocompletionCellFactory.h; sourceTree = "<group>"; };
 		690761AB4739E5D5F3683817 /* AFXMLRequestOperation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AFXMLRequestOperation.h; path = ../thirdparty/AFNetworking/AFNetworking/AFXMLRequestOperation.h; sourceTree = "<group>"; };
@@ -234,8 +234,8 @@
 		76E6DCD916DE128900F53C02 /* src */ = {
 			isa = PBXGroup;
 			children = (
-				3A99818A17CD1F5000A8D339 /* SuggestionsList.h */,
-				3A99818917CD1F4F00A8D339 /* SuggestionsList.m */,
+				3A398A2717CD4AAB0030BB5D /* SuggestionsList.m */,
+				3A398A2817CD4AAB0030BB5D /* SuggestionsList.h */,
 				76E6DCDB16DE129C00F53C02 /* TRAutocompleteView.h */,
 				76E6DCDC16DE129C00F53C02 /* TRAutocompleteView.m */,
 				690761762B7F1B27B7986827 /* GoogleMaps */,
@@ -334,7 +334,7 @@
 				76272FC416DE7DF8002B848B /* TRStringExtensions.m in Sources */,
 				76272FC516DE7DF8002B848B /* TRTextFieldExtensions.m in Sources */,
 				6907637E09CE6E2DEDAC11C6 /* TRGoogleMapsAutocompletionCellFactory.m in Sources */,
-				3A99818B17CD1F5000A8D339 /* SuggestionsList.m in Sources */,
+				3A398A2917CD4AAB0030BB5D /* SuggestionsList.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
