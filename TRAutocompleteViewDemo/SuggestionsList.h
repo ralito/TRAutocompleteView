@@ -19,7 +19,9 @@
 @property(retain)NSArray *matchedStrings;
 @property(retain)UIPopoverController *popOver;
 @property(retain)id<TRAutocompleteItemsSource> itemSource;
-@property(copy) didAutocompletionBlock autocompletionBlock;
 @property(assign)UITextField *activeTextField;
+
+@property(copy) didAutocompletionBlock autocompletionBlock;
+@property(retain) NSString* something;
 
 @end

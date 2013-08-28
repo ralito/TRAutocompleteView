@@ -19,6 +19,8 @@
 @synthesize popOver = _popOver;
 @synthesize activeTextField = _activeTextField;
 @synthesize itemSource = _itemSource;
+@synthesize autocompletionBlock;
+@synthesize something;
 
 -(id)initWithAutocompleteItemSource:(id<TRAutocompleteItemsSource>)itemSource
 {

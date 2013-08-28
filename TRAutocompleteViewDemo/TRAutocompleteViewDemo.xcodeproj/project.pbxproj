@@ -180,8 +180,6 @@
 		76E6DCA716DE10E500F53C02 = {
 			isa = PBXGroup;
 			children = (
-				3A398A2C17CD63A10030BB5D /* MobileCoreServices.framework */,
-				3A398A2A17CD63810030BB5D /* SystemConfiguration.framework */,
 				76E6DCD916DE128900F53C02 /* src */,
 				76E6DCB916DE10E500F53C02 /* TRAutocompleteViewDemo */,
 				76E6DCB216DE10E500F53C02 /* Frameworks */,
@@ -201,6 +199,8 @@
 		76E6DCB216DE10E500F53C02 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				3A398A2C17CD63A10030BB5D /* MobileCoreServices.framework */,
+				3A398A2A17CD63810030BB5D /* SystemConfiguration.framework */,
 				767D03DD16EE228D0051925C /* CoreLocation.framework */,
 				76E6DCB316DE10E500F53C02 /* UIKit.framework */,
 				76E6DCB516DE10E500F53C02 /* Foundation.framework */,

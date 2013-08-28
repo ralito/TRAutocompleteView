@@ -65,7 +65,7 @@
                                                          blue:(27) / 255.0f
                                                         alpha:1];
 
-    _autocompleteView.didAutocompleteWith = ^(id<TRSuggestionItem> item)
+    _autocompleteView.autocompletionBlock = ^(id<TRSuggestionItem> item)
     {
         NSLog(@"Autocompleted with: %@", item.completionText);
     };

@@ -100,8 +100,8 @@ controller:(UIViewController *)controller withMode:(SuggestionMode)mode whenSele
             
         }else{
             
-            suggestionsList = [[SuggestionsList alloc] init];
-            suggestionsList.autocompleteBlock = autocompletionBlock;
+            suggestionsList = [[SuggestionsList alloc] initWithArray:[NSArray array]];
+            suggestionsList.autocompletionBlock = autocompleteBlock_;
             
         }
         
