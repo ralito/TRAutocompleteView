@@ -111,7 +111,8 @@
         cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:CellIdentifier];
     }
     
-    cell.textLabel.text = [self.matchedSuggestions objectAtIndex:indexPath.row];
+    id item = [self.matchedSuggestions objectAtIndex:indexPath.row];
+    cell.textLabel.text = [item completionText];
     
     return cell;
 }
@@ -123,9 +124,6 @@
     
     [self.activeTextField setText:[item completionText]];
     [self.popOver dismissPopoverAnimated:YES];
-    
-    
-    _itemSource.selectedSuggestion = (id <TRSuggestionItem>) item;
     
     _activeTextField.text = [item completionText];
     [_activeTextField resignFirstResponder];
