@@ -16,7 +16,7 @@
 -(void)showSuggestionsFor:(UITextField*)textField;
 
 @property(retain)NSArray *suggestionsArray;
-@property(retain)NSArray *matchedStrings;
+@property(retain)NSArray *matchedSuggestions;
 @property(retain)UIPopoverController *popOver;
 @property(retain)id<TRAutocompleteItemsSource> itemSource;
 @property(assign)UITextField *activeTextField;

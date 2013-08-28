@@ -15,7 +15,7 @@
 @implementation SuggestionsList
 
 @synthesize suggestionsArray = _suggestionsArray;
-@synthesize  matchedStrings = _matchedStrings;
+@synthesize  matchedSuggestions = _matchedSuggestions;
 @synthesize popOver = _popOver;
 @synthesize activeTextField = _activeTextField;
 @synthesize itemSource = _itemSource;
@@ -27,7 +27,7 @@
     if (self) {
         
         self.suggestionsArray = [NSArray array];
-        self.matchedStrings = [NSArray array];
+        self.matchedSuggestions = [NSArray array];
         self.itemSource=itemSource;
         
         //Initializing PopOver
@@ -39,13 +39,13 @@
 }
 #pragma mark Main Suggestions Methods
 -(void)matchString:(NSString *)letters {
-    self.matchedStrings = nil;
+    self.matchedSuggestions = nil;
     
     if (_suggestionsArray == nil) {
         @throw [NSException exceptionWithName:@"Please set an array to suggestionsArray" reason:@"No array specified" userInfo:nil];
     }
     
-    self.matchedStrings = [_suggestionsArray filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(id evaluatedObject, NSDictionary *bindings) {
+    self.matchedSuggestions = [_suggestionsArray filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(id evaluatedObject, NSDictionary *bindings) {
         return [[evaluatedObject completionText] hasPrefix:letters];
     }]];
                            
@@ -54,7 +54,7 @@
 
 -(void)showPopOverListFor:(UITextField*)textField{
     UIPopoverArrowDirection arrowDirection = UIPopoverArrowDirectionUp;
-    if ([self.matchedStrings count] == 0) {
+    if ([self.matchedSuggestions count] == 0) {
         [_popOver dismissPopoverAnimated:YES];
     }
     else if(!_popOver.isPopoverVisible){
@@ -99,7 +99,7 @@
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
 {
-    return [self.matchedStrings count];
+    return [self.matchedSuggestions count];
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
@@ -111,25 +111,27 @@
         cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:CellIdentifier];
     }
     
-    cell.textLabel.text = [self.matchedStrings objectAtIndex:indexPath.row];
+    cell.textLabel.text = [self.matchedSuggestions objectAtIndex:indexPath.row];
     
     return cell;
 }
 #pragma mark - Table view delegate
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
-    [self.activeTextField setText:[self.matchedStrings objectAtIndex:indexPath.row]];
+    
+    id item = [self.matchedSuggestions objectAtIndex:indexPath.row];
+    NSAssert([item conformsToProtocol:@protocol(TRSuggestionItem)], @"Suggestion item must conform TRSuggestionItem");
+    
+    [self.activeTextField setText:[item completionText]];
     [self.popOver dismissPopoverAnimated:YES];
     
-    id suggestion = self.suggestionsArray[(NSUInteger) indexPath.row];
-    NSAssert([suggestion conformsToProtocol:@protocol(TRSuggestionItem)], @"Suggestion item must conform TRSuggestionItem");
     
-    _itemSource.selectedSuggestion = (id <TRSuggestionItem>) suggestion;
+    _itemSource.selectedSuggestion = (id <TRSuggestionItem>) item;
     
-    _activeTextField.text = [suggestion completionText];
+    _activeTextField.text = [item completionText];
     [_activeTextField resignFirstResponder];
     
     if (self.autocompletionBlock)
-        self.autocompletionBlock(suggestion);
+        self.autocompletionBlock(item);
     
     
 }
