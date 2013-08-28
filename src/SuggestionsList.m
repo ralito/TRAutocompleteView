@@ -7,28 +7,33 @@
 //
 
 #import "SuggestionsList.h"
+#import "TRAutocompleteItemsSource.h"
 
 #define POPOVER_WIDTH 250
 #define POPOVER_HEIGHT 260
 
 @implementation SuggestionsList
 
-@synthesize stringsArray = _stringsArray;
+@synthesize suggestionsArray = _suggestionsArray;
 @synthesize  matchedStrings = _matchedStrings;
 @synthesize popOver = _popOver;
 @synthesize activeTextField = _activeTextField;
+@synthesize itemSource = _itemSource;
+@synthesize autocompletionBlock;
 
-- (id)initWithArray:(NSArray*)array
+-(id)initWithAutocompleteItemSource:(id<TRAutocompleteItemsSource>)itemSource andAutocompletionBlock:(didAutocompletionBlock)autocompletionBlock_
 {
     self = [super init];
     if (self) {
         
-        self.stringsArray = array;
+        self.suggestionsArray = [NSArray array];
         self.matchedStrings = [NSArray array];
+        self.itemSource=itemSource;
         
         //Initializing PopOver
         self.popOver = [[UIPopoverController alloc] initWithContentViewController:self];
         self.popOver.popoverContentSize = CGSizeMake(POPOVER_WIDTH, POPOVER_HEIGHT);
+        self.autocompletionBlock=autocompletionBlock_;
     }
     return self;
 }
@@ -36,11 +41,14 @@
 -(void)matchString:(NSString *)letters {
     self.matchedStrings = nil;
     
-    if (_stringsArray == nil) {
-        @throw [NSException exceptionWithName:@"Please set an array to stringsArray" reason:@"No array specified" userInfo:nil];
+    if (_suggestionsArray == nil) {
+        @throw [NSException exceptionWithName:@"Please set an array to suggestionsArray" reason:@"No array specified" userInfo:nil];
     }
     
-    self.matchedStrings = [_stringsArray filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"self contains[cd] %@",letters]];
+    self.matchedStrings = [_suggestionsArray filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(id evaluatedObject, NSDictionary *bindings) {
+        return [[evaluatedObject completionText] hasPrefix:letters];
+    }]];
+                           
     [self.tableView reloadData];
 }
 
@@ -111,6 +119,19 @@
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
     [self.activeTextField setText:[self.matchedStrings objectAtIndex:indexPath.row]];
     [self.popOver dismissPopoverAnimated:YES];
+    
+    id suggestion = self.suggestionsArray[(NSUInteger) indexPath.row];
+    NSAssert([suggestion conformsToProtocol:@protocol(TRSuggestionItem)], @"Suggestion item must conform TRSuggestionItem");
+    
+    _itemSource.selectedSuggestion = (id <TRSuggestionItem>) suggestion;
+    
+    _activeTextField.text = [suggestion completionText];
+    [_activeTextField resignFirstResponder];
+    
+    if (self.autocompletionBlock)
+        self.autocompletionBlock(suggestion);
+    
+    
 }
 - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
 {

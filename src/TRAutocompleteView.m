@@ -100,8 +100,7 @@ controller:(UIViewController *)controller withMode:(SuggestionMode)mode whenSele
             
         }else{
             
-            suggestionsList = [[SuggestionsList alloc] initWithArray:[NSArray array]];
-            suggestionsList.autocompletionBlock = autocompleteBlock_;
+            suggestionsList = [[SuggestionsList alloc] initWithAutocompleteItemSource:_itemsSource andAutocompletionBlock:autocompleteBlock_];
             
         }
         
@@ -189,7 +188,7 @@ controller:(UIViewController *)controller withMode:(SuggestionMode)mode whenSele
                                                                         if(suggestionMode==Normal)
                                                                             [_table reloadData];
                                                                         else{
-                                                                            suggestionsList.stringsArray=self.suggestions;
+                                                                            suggestionsList.suggestionsArray=self.suggestions;
                                                                             
                                                                         }
                                                                     }
@@ -209,7 +208,7 @@ controller:(UIViewController *)controller withMode:(SuggestionMode)mode whenSele
                                                                             // show popover now...
                                                                             
                                                                             if (self.suggestions.count > 0){
-                                                                                suggestionsList.stringsArray=self.suggestions;
+                                                                                suggestionsList.suggestionsArray=self.suggestions;
                                                                                 [suggestionsList showSuggestionsFor:_queryTextField];
                                                                                 
                                                                             }
