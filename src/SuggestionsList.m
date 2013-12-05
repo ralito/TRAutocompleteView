@@ -46,7 +46,7 @@
     }
     
     self.matchedSuggestions = [_suggestionsArray filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(id evaluatedObject, NSDictionary *bindings) {
-        return [[evaluatedObject completionText] hasPrefix:letters];
+        return ([[evaluatedObject completionText] rangeOfString:letters options:NSCaseInsensitiveSearch].location != NSNotFound);
     }]];
                            
     [self.tableView reloadData];

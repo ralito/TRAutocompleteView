@@ -262,7 +262,7 @@
 
 - (void)dealloc
 {
-    
+    [_queryTextField removeTarget:self action:@selector(queryChanged:) forControlEvents:UIControlEventEditingChanged];
     [[NSNotificationCenter defaultCenter]
      removeObserver:self
      name:UIKeyboardDidShowNotification
