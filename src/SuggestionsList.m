@@ -125,12 +125,12 @@
     [self.activeTextField setText:[item completionText]];
     [self.popOver dismissPopoverAnimated:YES];
     
-    _activeTextField.text = [item completionText];
-    [_activeTextField resignFirstResponder];
-    
     if (self.autocompletionBlock)
         self.autocompletionBlock(item);
     
+    _activeTextField.text = [item completionText];
+    [_activeTextField resignFirstResponder];
+
     
 }
 - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation

@@ -253,11 +253,11 @@
     
     self.selectedSuggestion = (id <TRSuggestionItem>) suggestion;
     
-    _queryTextField.text = self.selectedSuggestion.completionText;
-    [_queryTextField resignFirstResponder];
-    
     if (self.autocompletionBlock)
         self.autocompletionBlock(self.selectedSuggestion);
+    
+    _queryTextField.text = self.selectedSuggestion.completionText;
+    [_queryTextField resignFirstResponder];
 }
 
 - (void)dealloc
