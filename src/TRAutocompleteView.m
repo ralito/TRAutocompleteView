@@ -248,7 +248,30 @@
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    id suggestion = self.suggestions[(NSUInteger) indexPath.row];
+    [self selectMatch:indexPath.row];
+}
+
+-(BOOL)selectSingleMatch{
+    
+    if (self.suggestions.count==1){
+        
+        [self selectMatch:0];
+        if(suggestionsList.popOver.isPopoverVisible)
+            [suggestionsList.popOver dismissPopoverAnimated:YES];
+        
+        return YES;
+    }
+    if (self.suggestions.count>1) {
+        return YES;
+    }
+    
+    return NO;
+}
+
+
+-(void)selectMatch:(NSUInteger)row{
+    
+    id suggestion = self.suggestions[row];
     NSAssert([suggestion conformsToProtocol:@protocol(TRSuggestionItem)], @"Suggestion item must conform TRSuggestionItem");
     
     self.selectedSuggestion = (id <TRSuggestionItem>) suggestion;
@@ -258,8 +281,9 @@
     
     _queryTextField.text = self.selectedSuggestion.completionText;
     [_queryTextField resignFirstResponder];
+    
+    
 }
-
 - (void)dealloc
 {
     [_queryTextField removeTarget:self action:@selector(queryChanged:) forControlEvents:UIControlEventEditingChanged];

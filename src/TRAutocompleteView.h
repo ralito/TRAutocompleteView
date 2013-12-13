@@ -59,6 +59,8 @@ typedef enum SuggestionMode : NSUInteger {
                                      usingSource:(id <TRAutocompleteItemsSource>)itemsSource
                                      cellFactory:(id <TRAutocompletionCellFactory>)factory
                                     presentingIn:(UIViewController *)controller withMode:(SuggestionMode)mode
-                                    whenSelectionMade:(didAutocompletionBlock)autocompleteBlock;
+                               whenSelectionMade:(didAutocompletionBlock)autocompleteBlock;
+
+-(BOOL)selectSingleMatch;
 
 @end
