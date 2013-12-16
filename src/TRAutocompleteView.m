@@ -84,6 +84,8 @@
     _cellFactory = factory;
     _contextController = controller;
     autocompletionBlock=autocompleteBlock_;
+    self.suggestions = nil;
+    suggestionsList.suggestionsArray = nil;
     
     if (self)
     {
@@ -190,6 +192,7 @@
              }
              else
              {
+                 self.suggestions = nil;
                  self.suggestions = suggestions;
                  if(suggestionMode==Normal){
                      [_table reloadData];
