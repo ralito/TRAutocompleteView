@@ -14,4 +14,5 @@ Pod::Spec.new do |s|
   
   s.frameworks = 'CoreLocation'
   s.dependency 'AFNetworking', '~> 1.3.0'
+  s.dependency 'FPPopover', '~> 1.4.1'
 end
