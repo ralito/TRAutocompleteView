@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		3A19704D192FA2CF003844C2 /* FPPopoverController.m in Sources */ = {isa = PBXBuildFile; fileRef = 3A197048192FA2CF003844C2 /* FPPopoverController.m */; };
+		3A19704E192FA2CF003844C2 /* FPPopoverView.m in Sources */ = {isa = PBXBuildFile; fileRef = 3A19704A192FA2CF003844C2 /* FPPopoverView.m */; };
+		3A19704F192FA2CF003844C2 /* FPTouchView.m in Sources */ = {isa = PBXBuildFile; fileRef = 3A19704C192FA2CF003844C2 /* FPTouchView.m */; };
 		3A3634CB17CD7D0700DE4473 /* SuggestionsList.m in Sources */ = {isa = PBXBuildFile; fileRef = 3A3634CA17CD7D0700DE4473 /* SuggestionsList.m */; };
 		3A398A2B17CD63810030BB5D /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3A398A2A17CD63810030BB5D /* SystemConfiguration.framework */; };
 		3A398A2D17CD63A10030BB5D /* MobileCoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3A398A2C17CD63A10030BB5D /* MobileCoreServices.framework */; };
@@ -43,6 +46,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		3A197047192FA2CF003844C2 /* FPPopoverController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FPPopoverController.h; sourceTree = "<group>"; };
+		3A197048192FA2CF003844C2 /* FPPopoverController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FPPopoverController.m; sourceTree = "<group>"; };
+		3A197049192FA2CF003844C2 /* FPPopoverView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FPPopoverView.h; sourceTree = "<group>"; };
+		3A19704A192FA2CF003844C2 /* FPPopoverView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FPPopoverView.m; sourceTree = "<group>"; };
+		3A19704B192FA2CF003844C2 /* FPTouchView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FPTouchView.h; sourceTree = "<group>"; };
+		3A19704C192FA2CF003844C2 /* FPTouchView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FPTouchView.m; sourceTree = "<group>"; };
+		3A197050192FA2FD003844C2 /* ARCMacros.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ARCMacros.h; sourceTree = "<group>"; };
 		3A3634C917CD7D0700DE4473 /* SuggestionsList.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SuggestionsList.h; path = ../src/SuggestionsList.h; sourceTree = "<group>"; };
 		3A3634CA17CD7D0700DE4473 /* SuggestionsList.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = SuggestionsList.m; path = ../src/SuggestionsList.m; sourceTree = "<group>"; };
 		3A398A2A17CD63810030BB5D /* SystemConfiguration.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SystemConfiguration.framework; path = System/Library/Frameworks/SystemConfiguration.framework; sourceTree = SDKROOT; };
@@ -119,6 +129,20 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		3A197046192FA2CF003844C2 /* FPPopover */ = {
+			isa = PBXGroup;
+			children = (
+				3A197050192FA2FD003844C2 /* ARCMacros.h */,
+				3A197047192FA2CF003844C2 /* FPPopoverController.h */,
+				3A197048192FA2CF003844C2 /* FPPopoverController.m */,
+				3A197049192FA2CF003844C2 /* FPPopoverView.h */,
+				3A19704A192FA2CF003844C2 /* FPPopoverView.m */,
+				3A19704B192FA2CF003844C2 /* FPTouchView.h */,
+				3A19704C192FA2CF003844C2 /* FPTouchView.m */,
+			);
+			path = FPPopover;
+			sourceTree = "<group>";
+		};
 		6907600F96062972EB3D7C2F /* Extensions */ = {
 			isa = PBXGroup;
 			children = (
@@ -146,6 +170,7 @@
 		690763D6A9A217A454AB8187 /* thirdparty */ = {
 			isa = PBXGroup;
 			children = (
+				3A197046192FA2CF003844C2 /* FPPopover */,
 				69076A3DCC5965F98581CA8C /* AFNetworking */,
 			);
 			name = thirdparty;
@@ -333,14 +358,17 @@
 				69076960F6A2040CBD538458 /* AFHTTPRequestOperation.m in Sources */,
 				6907605A9F8138C763447546 /* AFImageRequestOperation.m in Sources */,
 				6907661491D2D5A34E55BC5C /* AFJSONRequestOperation.m in Sources */,
+				3A19704E192FA2CF003844C2 /* FPPopoverView.m in Sources */,
 				69076FE55865293208CAEBB4 /* AFNetworkActivityIndicatorManager.m in Sources */,
 				69076D11E328732D47889D3E /* AFPropertyListRequestOperation.m in Sources */,
+				3A19704F192FA2CF003844C2 /* FPTouchView.m in Sources */,
 				69076D53513CC523F3390E49 /* AFURLConnectionOperation.m in Sources */,
 				690764ED17B27BE168A24444 /* AFXMLRequestOperation.m in Sources */,
 				69076431F1C7EFBAFFDBD49D /* UIImageView+AFNetworking.m in Sources */,
 				6907606835FD3267D373C2E5 /* TRGoogleMapsSuggestion.m in Sources */,
 				76272FC416DE7DF8002B848B /* TRStringExtensions.m in Sources */,
 				76272FC516DE7DF8002B848B /* TRTextFieldExtensions.m in Sources */,
+				3A19704D192FA2CF003844C2 /* FPPopoverController.m in Sources */,
 				6907637E09CE6E2DEDAC11C6 /* TRGoogleMapsAutocompletionCellFactory.m in Sources */,
 				3A3634CB17CD7D0700DE4473 /* SuggestionsList.m in Sources */,
 			);

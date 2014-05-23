@@ -8,6 +8,7 @@
 
 #import <UIKit/UIKit.h>
 #import "TRAutocompleteItemsSource.h"
+#import "FPPopoverController.h"
 
 @interface SuggestionsList : UITableViewController 
 
@@ -17,7 +18,7 @@
 
 @property(retain)NSArray *suggestionsArray;
 @property(retain)NSArray *matchedSuggestions;
-@property(retain)UIPopoverController *popOver;
+@property(retain) FPPopoverController *popOver;
 @property(retain)id<TRAutocompleteItemsSource> itemSource;
 @property(assign)UITextField *activeTextField;
 

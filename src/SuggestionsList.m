@@ -31,8 +31,11 @@
         self.itemSource=itemSource;
         
         //Initializing PopOver
-        self.popOver = [[UIPopoverController alloc] initWithContentViewController:self];
-        self.popOver.popoverContentSize = CGSizeMake(POPOVER_WIDTH, POPOVER_HEIGHT);
+        self.popOver = [[FPPopoverController alloc] initWithViewController:self];
+        self.popOver.contentSize = CGSizeMake(POPOVER_WIDTH, POPOVER_HEIGHT);
+        self.popOver.arrowDirection = FPPopoverArrowDirectionUp;
+        self.popOver.border = NO;
+        self.popOver.tint = FPPopoverWhiteTint;
         self.autocompletionBlock=autocompletionBlock_;
     }
     return self;
@@ -53,12 +56,11 @@
 }
 
 -(void)showPopOverListFor:(UITextField*)textField{
-    UIPopoverArrowDirection arrowDirection = UIPopoverArrowDirectionUp;
     if ([self.matchedSuggestions count] == 0) {
         [_popOver dismissPopoverAnimated:YES];
     }
-    else if(!_popOver.isPopoverVisible){
-        [_popOver presentPopoverFromRect:textField.frame inView:textField.superview permittedArrowDirections:arrowDirection animated:YES];
+    else {
+        [_popOver presentPopoverFromView:textField];
         
     }
 }
