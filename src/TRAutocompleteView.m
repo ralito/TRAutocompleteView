@@ -259,8 +259,7 @@
     if (self.suggestions.count==1){
         
         [self selectMatch:0];
-        if(suggestionsList.popOver.isPopoverVisible)
-            [suggestionsList.popOver dismissPopoverAnimated:YES];
+        [suggestionsList.popOver dismissPopoverAnimated:YES];
         
         return YES;
     }
