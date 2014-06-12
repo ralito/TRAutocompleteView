@@ -256,15 +256,17 @@
 
 -(BOOL)selectSingleMatch{
     
-    if (self.suggestions.count==1){
+    NSLog(@"selecting single match");
+    if (suggestionsList.matchedSuggestions.count==1){
         
         [self selectMatch:0];
-        [suggestionsList.popOver dismissPopoverAnimated:YES];
+        if(suggestionsList.popOver.isPopoverVisible)
+            [suggestionsList.popOver dismissPopoverAnimated:YES];
         
         return YES;
     }
-    if (self.suggestions.count>1) {
-        return YES;
+    if (suggestionsList.matchedSuggestions.count>1) {
+        return NO;
     }
     
     return NO;
@@ -273,7 +275,7 @@
 
 -(void)selectMatch:(NSUInteger)row{
     
-    id suggestion = self.suggestions[row];
+    id suggestion = suggestionsList.matchedSuggestions[row];
     NSAssert([suggestion conformsToProtocol:@protocol(TRSuggestionItem)], @"Suggestion item must conform TRSuggestionItem");
     
     self.selectedSuggestion = (id <TRSuggestionItem>) suggestion;
