@@ -9,8 +9,8 @@
 #import "SuggestionsList.h"
 #import "TRAutocompleteItemsSource.h"
 
-#define POPOVER_WIDTH 250
-#define POPOVER_HEIGHT 260
+#define POPOVER_WIDTH 300
+#define POPOVER_HEIGHT 324
 
 @implementation SuggestionsList
 
