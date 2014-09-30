@@ -9,10 +9,13 @@
 #import "SuggestionsList.h"
 #import "TRAutocompleteItemsSource.h"
 
-#define POPOVER_WIDTH 300
+#define IPAD_POPOVER_WIDTH 350
+#define IPHONE_POPOVER_WIDTH 300
 #define POPOVER_HEIGHT 324
 
-@implementation SuggestionsList
+@implementation SuggestionsList{
+    CGFloat popoverWidth;
+}
 
 @synthesize suggestionsArray = _suggestionsArray;
 @synthesize  matchedSuggestions = _matchedSuggestions;
@@ -20,8 +23,9 @@
 @synthesize activeTextField = _activeTextField;
 @synthesize itemSource = _itemSource;
 @synthesize autocompletionBlock;
+@synthesize cellFont;
 
--(id)initWithAutocompleteItemSource:(id<TRAutocompleteItemsSource>)itemSource andAutocompletionBlock:(didAutocompletionBlock)autocompletionBlock_
+-(id)initWithAutocompleteItemSource:(id<TRAutocompleteItemsSource>)itemSource andAutocompletionBlock:(didAutocompletionBlock)autocompletionBlock_ withCellFont:(UIFont *)cellFont_
 {
     self = [super init];
     if (self) {
@@ -31,12 +35,15 @@
         self.itemSource=itemSource;
         
         //Initializing PopOver
+        popoverWidth = (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad)?IPAD_POPOVER_WIDTH:IPHONE_POPOVER_WIDTH;
         self.popOver = [[FPPopoverController alloc] initWithViewController:self];
-        self.popOver.contentSize = CGSizeMake(POPOVER_WIDTH, POPOVER_HEIGHT);
+        [self.tableView setFrame:CGRectMake(0, 0, popoverWidth, POPOVER_HEIGHT)];
+        self.popOver.contentSize = CGSizeMake(popoverWidth, POPOVER_HEIGHT);
         self.popOver.arrowDirection = FPPopoverArrowDirectionUp;
         self.popOver.border = NO;
         self.popOver.tint = FPPopoverWhiteTint;
         self.autocompletionBlock=autocompletionBlock_;
+        self.cellFont=cellFont_;
     }
     return self;
 }
@@ -111,6 +118,9 @@
     UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:CellIdentifier];
     if (cell == nil) {
         cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:CellIdentifier];
+        cell.textLabel.lineBreakMode = NSLineBreakByWordWrapping;
+        cell.textLabel.numberOfLines = 0;
+        cell.textLabel.font = cellFont;
     }
     
     id item = [self.matchedSuggestions objectAtIndex:indexPath.row];
@@ -139,6 +149,18 @@
 {
     // Return YES for supported orientations
     return YES;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    id item = [self.matchedSuggestions objectAtIndex:indexPath.row];
+    NSString* text = [item completionText];
+    
+    CGSize constraintSize = CGSizeMake(popoverWidth, MAXFLOAT);
+    CGSize labelSize = [text sizeWithFont:cellFont constrainedToSize:constraintSize lineBreakMode:UILineBreakModeWordWrap];
+    
+    CGFloat padding = (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad)?40:25;
+    return labelSize.height + padding;
 }
 
 @end
