@@ -102,7 +102,7 @@
             
         }else{
             
-            suggestionsList = [[SuggestionsList alloc] initWithAutocompleteItemSource:_itemsSource andAutocompletionBlock:autocompleteBlock_];
+            suggestionsList = [[SuggestionsList alloc] initWithAutocompleteItemSource:_itemsSource andAutocompletionBlock:autocompleteBlock_ withCellFont:_cellFactory.cellFont];
             
         }
         
