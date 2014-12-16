@@ -98,6 +98,11 @@
             _table.separatorStyle = self.separatorStyle;
             _table.delegate = self;
             _table.dataSource = self;
+            
+            UIEdgeInsets edgeInsets = UIEdgeInsetsMake(0, 0, 100, 0);
+            [_table setContentInset:edgeInsets];
+            [_table setScrollIndicatorInsets:edgeInsets];
+
             [self addSubview:_table];
             
         }else{
