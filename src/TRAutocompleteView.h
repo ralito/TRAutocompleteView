@@ -61,6 +61,7 @@ typedef enum SuggestionMode : NSUInteger {
                                     presentingIn:(UIViewController *)controller withMode:(SuggestionMode)mode
                                whenSelectionMade:(didAutocompletionBlock)autocompleteBlock;
 
+- (void)queryChanged:(id)sender;
 -(BOOL)selectSingleMatch;
 
 @end

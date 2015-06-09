@@ -36,6 +36,8 @@
 @property(readwrite) id <TRSuggestionItem> selectedSuggestion;
 @property(readwrite) NSArray *suggestions;
 
+- (BOOL)isSearchTextField;
+
 @end
 
 @implementation TRAutocompleteView
@@ -92,6 +94,11 @@
         if(mode==Normal){
             [self loadDefaults];
             
+            // Override for UISearchBarTextField to assure tableView displayed below UISearchBar + UIStatusBar
+            if ([self isSearchTextField]) {
+                self.topMargin = 20;
+            }
+            
             _table = [[UITableView alloc] initWithFrame:CGRectZero style:UITableViewStylePlain];
             _table.backgroundColor = [UIColor clearColor];
             _table.separatorColor = self.separatorColor;
@@ -102,13 +109,11 @@
             UIEdgeInsets edgeInsets = UIEdgeInsetsMake(0, 0, 100, 0);
             [_table setContentInset:edgeInsets];
             [_table setScrollIndicatorInsets:edgeInsets];
-
+            
             [self addSubview:_table];
             
-        }else{
-            
+        } else{
             suggestionsList = [[SuggestionsList alloc] initWithAutocompleteItemSource:_itemsSource andAutocompletionBlock:autocompleteBlock_ withCellFont:_cellFactory.cellFont];
-            
         }
         
         [_queryTextField addTarget:self action:@selector(queryChanged:) forControlEvents:UIControlEventEditingChanged];
@@ -120,11 +125,14 @@
                                                  selector:@selector(keyboardWillHide:)
                                                      name:UIKeyboardWillHideNotification
                                                    object:nil];
-        
-        
     }
     
     return self;
+}
+
+- (BOOL)isSearchTextField
+{
+    return [_queryTextField isKindOfClass:NSClassFromString(@"UISearchBarTextField")];
 }
 
 - (void)loadDefaults
@@ -139,7 +147,7 @@
 
 - (void)keyboardWasShown:(NSNotification *)notification
 {
-    if(suggestionMode==Normal){
+    if (suggestionMode==Normal) {
         NSDictionary *info = [notification userInfo];
         CGSize kbSize = [[info objectForKey:UIKeyboardFrameBeginUserInfoKey] CGRectValue].size;
         
@@ -155,17 +163,24 @@
             contextViewHeight = _contextController.view.frame.size.width;
             kbHeight = kbSize.width;
         }
-        
-        CGPoint textPosition = [_queryTextField convertPoint:_queryTextField.bounds.origin toView:nil]; //Taking in account Y position of queryTextField relatively to it's Window
-        
-        CGFloat calculatedY = textPosition.y + _queryTextField.frame.size.height + self.topMargin;
+
+        CGRect controlFrame;
+        // Forces table view to entire width of view
+        // inheriting from the size of the UISearchBar included in the view controller
+        if ([self isSearchTextField]) {
+            controlFrame = _queryTextField.superview.frame;
+        }
+        else {
+            controlFrame = _queryTextField.frame;
+        }
+
+        CGFloat calculatedY = controlFrame.origin.y + controlFrame.size.height + self.topMargin;
         CGFloat calculatedHeight = contextViewHeight - calculatedY - kbHeight;
-        
         calculatedHeight += _contextController.tabBarController.tabBar.frame.size.height; //keyboard is shown over it, need to compensate
-        
-        self.frame = CGRectMake(_queryTextField.frame.origin.x,
+
+        self.frame = CGRectMake(controlFrame.origin.x,
                                 calculatedY,
-                                _queryTextField.frame.size.width,
+                                controlFrame.size.width,
                                 calculatedHeight);
         _table.frame = CGRectMake(0, 0, self.frame.size.width, self.frame.size.height);
     }
@@ -197,7 +212,7 @@
              }
              else
              {
-                 self.suggestions = nil;
+//                 self.suggestions = nil;
                  self.suggestions = suggestions;
                  if(suggestionMode==Normal){
                      [_table reloadData];
@@ -261,7 +276,6 @@
 
 -(BOOL)selectSingleMatch{
     
-    NSLog(@"selecting single match");
     if (suggestionsList.matchedSuggestions.count==1){
         
         [self selectMatch:0];
@@ -279,9 +293,9 @@
 
 -(void)selectMatch:(NSUInteger)row{
     
-    id suggestion = suggestionsList.matchedSuggestions[row];
+    id suggestion = self.suggestions[(NSUInteger)row];
     NSAssert([suggestion conformsToProtocol:@protocol(TRSuggestionItem)], @"Suggestion item must conform TRSuggestionItem");
-    
+
     self.selectedSuggestion = (id <TRSuggestionItem>) suggestion;
     
     if (self.autocompletionBlock)
