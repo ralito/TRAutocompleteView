@@ -31,6 +31,12 @@
 #import "TRAutocompleteItemsSource.h"
 #import "TRAutocompletionCellFactory.h"
 
+#define UIViewAutoresizingFlexibleMargins                 \
+UIViewAutoresizingFlexibleBottomMargin    | \
+UIViewAutoresizingFlexibleLeftMargin      | \
+UIViewAutoresizingFlexibleRightMargin     | \
+UIViewAutoresizingFlexibleTopMargin
+
 @interface TRAutocompleteView () <UITableViewDelegate, UITableViewDataSource>
 
 @property(readwrite) id <TRSuggestionItem> selectedSuggestion;
@@ -89,37 +95,35 @@
     self.suggestions = nil;
     suggestionsList.suggestionsArray = nil;
     
-    if (self)
-    {
-        if(mode==Normal){
+    if (self) {
+        if (mode==Normal) {
+
+            // Preset appearance and autoresizing setup
             [self loadDefaults];
             
-            // Override for UISearchBarTextField to assure tableView displayed below UISearchBar + UIStatusBar
-            if ([self isSearchTextField]) {
-                self.topMargin = 20;
-            }
-            
-            _table = [[UITableView alloc] initWithFrame:CGRectZero style:UITableViewStylePlain];
-            _table.backgroundColor = [UIColor clearColor];
-            _table.separatorColor = self.separatorColor;
-            _table.separatorStyle = self.separatorStyle;
-            _table.delegate = self;
-            _table.dataSource = self;
-            
-            UIEdgeInsets edgeInsets = UIEdgeInsetsMake(0, 0, 100, 0);
-            [_table setContentInset:edgeInsets];
-            [_table setScrollIndicatorInsets:edgeInsets];
-            
+            // Initialize and configure table view
+            [self setupTableView];
+
+            // Add _table to autocompleteView to configure constraints
             [self addSubview:_table];
-            
-        } else{
+            [self addConstraints:[NSLayoutConstraint
+                                       constraintsWithVisualFormat:@"H:|-0-[_table]-0-|"
+                                       options:NSLayoutFormatDirectionLeadingToTrailing
+                                       metrics:nil
+                                       views:NSDictionaryOfVariableBindings(_table)]];
+            [self addConstraints:[NSLayoutConstraint
+                                       constraintsWithVisualFormat:@"V:|-0-[_table]-0-|"
+                                       options:NSLayoutFormatDirectionLeadingToTrailing
+                                       metrics:nil
+                                       views:NSDictionaryOfVariableBindings(_table)]];
+        } else {
             suggestionsList = [[SuggestionsList alloc] initWithAutocompleteItemSource:_itemsSource andAutocompletionBlock:autocompleteBlock_ withCellFont:_cellFactory.cellFont];
         }
         
         [_queryTextField addTarget:self action:@selector(queryChanged:) forControlEvents:UIControlEventEditingChanged];
         [[NSNotificationCenter defaultCenter] addObserver:self
-                                                 selector:@selector(keyboardWasShown:)
-                                                     name:UIKeyboardDidShowNotification
+                                                 selector:@selector(keyboardWillBeShown:)
+                                                     name:UIKeyboardWillShowNotification
                                                    object:nil];
         [[NSNotificationCenter defaultCenter] addObserver:self
                                                  selector:@selector(keyboardWillHide:)
@@ -130,10 +134,7 @@
     return self;
 }
 
-- (BOOL)isSearchTextField
-{
-    return [_queryTextField isKindOfClass:NSClassFromString(@"UISearchBarTextField")];
-}
+#pragma mark - View setup
 
 - (void)loadDefaults
 {
@@ -143,54 +144,27 @@
     self.separatorStyle = UITableViewCellSeparatorStyleNone;
     
     self.topMargin = 0;
+    
+    self.autoresizingMask = UIViewAutoresizingFlexibleMargins;
 }
 
-- (void)keyboardWasShown:(NSNotification *)notification
+- (void)setupTableView
 {
-    if (suggestionMode==Normal) {
-        NSDictionary *info = [notification userInfo];
-        CGSize kbSize = [[info objectForKey:UIKeyboardFrameBeginUserInfoKey] CGRectValue].size;
-        
-        CGFloat contextViewHeight = 0;
-        CGFloat kbHeight = 0;
-        if (UIInterfaceOrientationIsPortrait([UIApplication sharedApplication].statusBarOrientation))
-        {
-            contextViewHeight = _contextController.view.frame.size.height;
-            kbHeight = kbSize.height;
-        }
-        else if (UIInterfaceOrientationIsLandscape([UIApplication sharedApplication].statusBarOrientation))
-        {
-            contextViewHeight = _contextController.view.frame.size.width;
-            kbHeight = kbSize.width;
-        }
-
-        CGRect controlFrame;
-        // Forces table view to entire width of view
-        // inheriting from the size of the UISearchBar included in the view controller
-        if ([self isSearchTextField]) {
-            controlFrame = _queryTextField.superview.frame;
-        }
-        else {
-            controlFrame = _queryTextField.frame;
-        }
-
-        CGFloat calculatedY = controlFrame.origin.y + controlFrame.size.height + self.topMargin;
-        CGFloat calculatedHeight = contextViewHeight - calculatedY - kbHeight;
-        calculatedHeight += _contextController.tabBarController.tabBar.frame.size.height; //keyboard is shown over it, need to compensate
-
-        self.frame = CGRectMake(controlFrame.origin.x,
-                                calculatedY,
-                                controlFrame.size.width,
-                                calculatedHeight);
-        _table.frame = CGRectMake(0, 0, self.frame.size.width, self.frame.size.height);
-    }
+    _table = [[UITableView alloc] initWithFrame:self.frame style:UITableViewStylePlain];
+    _table.backgroundColor = [UIColor clearColor];
+    _table.separatorColor = self.separatorColor;
+    _table.separatorStyle = self.separatorStyle;
+    _table.delegate = self;
+    _table.dataSource = self;
+    
+    // Enable scrolling and slight padding @ bottom of table view
+    UIEdgeInsets edgeInsets = UIEdgeInsetsMake(0, 0, 10, 0);
+    [_table setContentInset:edgeInsets];
+    [_table setScrollIndicatorInsets:edgeInsets];
+    _table.translatesAutoresizingMaskIntoConstraints = NO;
 }
 
-- (void)keyboardWillHide:(NSNotification *)notification
-{
-    [self removeFromSuperview];
-    _visible = NO;
-}
+#pragma mark - Actions
 
 - (void)queryChanged:(id)sender
 {
@@ -212,26 +186,24 @@
              }
              else
              {
-//                 self.suggestions = nil;
+                 //                 self.suggestions = nil;
                  self.suggestions = suggestions;
                  if(suggestionMode==Normal){
                      [_table reloadData];
                      
+                     // show suggestions table view
                      if (self.suggestions.count > 0 && !_visible)
                      {
                          [_contextController.view addSubview:self];
                          _visible = YES;
                      }
                  } else {
-                     
-                     // show popover now...
-                     
+                     // show popover
                      if (self.suggestions.count > 0){
                          suggestionsList.suggestionsArray=self.suggestions;
                          [suggestionsList showSuggestionsFor:_queryTextField];
                          
                      }
-                     
                  }
              }
          }];
@@ -242,6 +214,47 @@
         [_table reloadData];
     }
 }
+
+#pragma mark - Keyboard notification methods
+
+- (void)keyboardWillBeShown:(NSNotification *)notification
+{
+    if (suggestionMode==Normal) {
+        CGRect controlFrame;
+        // Forces table view to entire width of view
+        // inheriting from the size of the UISearchBar included in the view controller
+        if ([self isSearchTextField]) {
+            controlFrame = _queryTextField.superview.frame;
+        }
+        else {
+            controlFrame = _queryTextField.frame;
+        }
+        
+        NSDictionary *info = [notification userInfo];
+        CGSize kbSize = [[info objectForKey:UIKeyboardFrameBeginUserInfoKey] CGRectValue].size;
+
+        CGFloat contextViewHeight = _contextController.view.frame.size.height;
+        CGFloat calculatedY = controlFrame.origin.y + controlFrame.size.height + StatusBarHeight();
+        CGFloat calculatedHeight = contextViewHeight - calculatedY - kbSize.height;
+
+        // Keyboard displayed over the top of TabBarController,
+        // so need to also add padding to height
+        calculatedHeight += _contextController.tabBarController.tabBar.frame.size.height;
+
+        self.frame = CGRectMake(controlFrame.origin.x,
+                                calculatedY,
+                                _contextController.view.frame.size.width,
+                                calculatedHeight);
+    }
+}
+
+- (void)keyboardWillHide:(NSNotification *)notification
+{
+    [self removeFromSuperview];
+    _visible = NO;
+}
+
+#pragma mark - Table view data source
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
 {
@@ -269,13 +282,17 @@
     return cell;
 }
 
+#pragma mark - Table view delegate
+
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
     [self selectMatch:indexPath.row];
 }
 
--(BOOL)selectSingleMatch{
-    
+#pragma mark - Selection utlity methods
+
+-(BOOL)selectSingleMatch
+{
     if (suggestionsList.matchedSuggestions.count==1){
         
         [self selectMatch:0];
@@ -290,9 +307,8 @@
     return NO;
 }
 
-
--(void)selectMatch:(NSUInteger)row{
-    
+-(void)selectMatch:(NSUInteger)row
+{
     id suggestion = self.suggestions[(NSUInteger)row];
     NSAssert([suggestion conformsToProtocol:@protocol(TRSuggestionItem)], @"Suggestion item must conform TRSuggestionItem");
 
@@ -303,16 +319,32 @@
     
     _queryTextField.text = self.selectedSuggestion.completionText;
     [_queryTextField resignFirstResponder];
-    
-    
 }
+
+#pragma mark - Utility methods
+
+- (BOOL)isSearchTextField
+{
+    return [_queryTextField isKindOfClass:NSClassFromString(@"UISearchBarTextField")];
+}
+
+CGFloat StatusBarHeight()
+{
+    CGSize statusBarSize = [[UIApplication sharedApplication] statusBarFrame].size;
+    return MIN(statusBarSize.width, statusBarSize.height);
+}
+
+#pragma mark - Memory management
+
 - (void)dealloc
 {
     [_queryTextField removeTarget:self action:@selector(queryChanged:) forControlEvents:UIControlEventEditingChanged];
+
     [[NSNotificationCenter defaultCenter]
      removeObserver:self
-     name:UIKeyboardDidShowNotification
+     name:UIKeyboardWillShowNotification
      object:nil];
+
     [[NSNotificationCenter defaultCenter]
      removeObserver:self
      name:UIKeyboardWillHideNotification
