@@ -31,7 +31,7 @@
 #import "TRAutocompleteItemsSource.h"
 #import "TRAutocompletionCellFactory.h"
 
-#define UIViewAutoresizingFlexibleMargins                 \
+#define UIViewAutoresizingFlexibleMargins   \
 UIViewAutoresizingFlexibleBottomMargin    | \
 UIViewAutoresizingFlexibleLeftMargin      | \
 UIViewAutoresizingFlexibleRightMargin     | \
@@ -120,6 +120,7 @@ UIViewAutoresizingFlexibleTopMargin
             suggestionsList = [[SuggestionsList alloc] initWithAutocompleteItemSource:_itemsSource andAutocompletionBlock:autocompleteBlock_ withCellFont:_cellFactory.cellFont];
         }
         
+        // Setup action for callback when new search query returns results
         [_queryTextField addTarget:self action:@selector(queryChanged:) forControlEvents:UIControlEventEditingChanged];
         [[NSNotificationCenter defaultCenter] addObserver:self
                                                  selector:@selector(keyboardWillBeShown:)
@@ -139,12 +140,10 @@ UIViewAutoresizingFlexibleTopMargin
 - (void)loadDefaults
 {
     self.backgroundColor = [UIColor whiteColor];
-    
     self.separatorColor = [UIColor lightGrayColor];
     self.separatorStyle = UITableViewCellSeparatorStyleNone;
-    
     self.topMargin = 0;
-    
+
     self.autoresizingMask = UIViewAutoresizingFlexibleMargins;
 }
 
@@ -181,12 +180,9 @@ UIViewAutoresizingFlexibleTopMargin
                      [_table reloadData];
                  else{
                      suggestionsList.suggestionsArray=self.suggestions;
-                     
                  }
              }
-             else
-             {
-                 //                 self.suggestions = nil;
+             else {
                  self.suggestions = suggestions;
                  if(suggestionMode==Normal){
                      [_table reloadData];
@@ -229,7 +225,10 @@ UIViewAutoresizingFlexibleTopMargin
         else {
             controlFrame = _queryTextField.frame;
         }
-        
+
+        // All calculations below are to determine autocompleteView's frame,
+        // considering orientation and position of controlFrame (textField), statusBar,
+        // and keyboard height.
         NSDictionary *info = [notification userInfo];
         CGSize kbSize = [[info objectForKey:UIKeyboardFrameBeginUserInfoKey] CGRectValue].size;
 
@@ -291,7 +290,7 @@ UIViewAutoresizingFlexibleTopMargin
 
 #pragma mark - Selection utlity methods
 
--(BOOL)selectSingleMatch
+- (BOOL)selectSingleMatch
 {
     if (suggestionsList.matchedSuggestions.count==1){
         
@@ -307,7 +306,7 @@ UIViewAutoresizingFlexibleTopMargin
     return NO;
 }
 
--(void)selectMatch:(NSUInteger)row
+- (void)selectMatch:(NSUInteger)row
 {
     id suggestion = self.suggestions[(NSUInteger)row];
     NSAssert([suggestion conformsToProtocol:@protocol(TRSuggestionItem)], @"Suggestion item must conform TRSuggestionItem");
