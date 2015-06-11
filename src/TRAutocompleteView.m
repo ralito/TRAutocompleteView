@@ -220,6 +220,8 @@ UIViewAutoresizingFlexibleTopMargin
 - (void)keyboardWillBeShown:(NSNotification *)notification
 {
     if (suggestionMode==Normal) {
+        BOOL isIPad = (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad);
+
         CGRect controlFrame;
         // Forces table view to entire width of view
         // inheriting from the size of the UISearchBar included in the view controller
@@ -234,11 +236,15 @@ UIViewAutoresizingFlexibleTopMargin
         // considering orientation and position of controlFrame (textField), statusBar,
         // and keyboard height.
         NSDictionary *info = [notification userInfo];
-        CGSize kbSize = [[info objectForKey:UIKeyboardFrameBeginUserInfoKey] CGRectValue].size;
+        CGSize kbSize = [[info objectForKey:UIKeyboardFrameEndUserInfoKey] CGRectValue].size;
 
         CGFloat contextViewHeight = _contextController.view.frame.size.height;
-        CGFloat calculatedY = controlFrame.origin.y + controlFrame.size.height + StatusBarHeight();
+        CGFloat calculatedY = controlFrame.origin.y + controlFrame.size.height + (isIPad ? 0 : StatusBarHeight());
         CGFloat calculatedHeight = contextViewHeight - calculatedY - kbSize.height;
+
+        // Multiplier for dynamic height of iPad's FormSheet to resize view/tableView frame
+        if (isIPad)
+            calculatedHeight *= 1.6;
 
         // Keyboard displayed over the top of TabBarController,
         // so need to also add padding to height
