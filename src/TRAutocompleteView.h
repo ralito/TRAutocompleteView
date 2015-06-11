@@ -55,6 +55,8 @@ typedef enum SuggestionMode : NSUInteger {
 
 @property(readonly) SuggestionMode suggestionMode;
 
+@property (nonatomic, assign) BOOL isLaunchedWithScanner;
+
 + (TRAutocompleteView *)autocompleteViewBindedTo:(UITextField *)textField
                                      usingSource:(id <TRAutocompleteItemsSource>)itemsSource
                                      cellFactory:(id <TRAutocompletionCellFactory>)factory

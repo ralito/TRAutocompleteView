@@ -167,38 +167,42 @@ UIViewAutoresizingFlexibleTopMargin
 
 - (void)queryChanged:(id)sender
 {
-    if ([_queryTextField.text length] >= _itemsSource.minimumCharactersToTrigger)
-    {
+    if ([_queryTextField.text length] >= _itemsSource.minimumCharactersToTrigger) {
         [_itemsSource itemsFor:_queryTextField.text whenReady:
          ^(NSArray *suggestions)
          {
              if (_queryTextField.text.length
-                 < _itemsSource.minimumCharactersToTrigger)
-             {
+                 < _itemsSource.minimumCharactersToTrigger) {
                  self.suggestions = nil;
-                 if(suggestionMode==Normal)
+                 if (suggestionMode==Normal)
                      [_table reloadData];
-                 else{
+                 else {
                      suggestionsList.suggestionsArray=self.suggestions;
                  }
              }
              else {
                  self.suggestions = suggestions;
-                 if(suggestionMode==Normal){
-                     [_table reloadData];
-                     
-                     // show suggestions table view
-                     if (self.suggestions.count > 0 && !_visible)
-                     {
-                         [_contextController.view addSubview:self];
-                         _visible = YES;
+
+                 if (suggestionMode==Normal) {
+                     // Scanner used and one suggestion matched scanned code, so select match
+                     if (self.suggestions.count == 1 && _isLaunchedWithScanner) {
+                         [self selectMatch:0];
+                         _isLaunchedWithScanner = NO;
+                     }
+                     else {
+                         [_table reloadData];
+
+                         // show suggestions table view
+                         if (self.suggestions.count > 0 && !_visible) {
+                             [_contextController.view addSubview:self];
+                             _visible = YES;
+                         }
                      }
                  } else {
                      // show popover
-                     if (self.suggestions.count > 0){
+                     if (self.suggestions.count > 0) {
                          suggestionsList.suggestionsArray=self.suggestions;
                          [suggestionsList showSuggestionsFor:_queryTextField];
-                         
                      }
                  }
              }
