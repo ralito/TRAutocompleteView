@@ -37,6 +37,8 @@ UIViewAutoresizingFlexibleLeftMargin      | \
 UIViewAutoresizingFlexibleRightMargin     | \
 UIViewAutoresizingFlexibleTopMargin
 
+static const CGFloat AUTOCOMPLETE_CELL_HEIGHT = 64.0f;
+
 @interface TRAutocompleteView () <UITableViewDelegate, UITableViewDataSource>
 
 @property(readwrite) id <TRSuggestionItem> selectedSuggestion;
@@ -141,7 +143,7 @@ UIViewAutoresizingFlexibleTopMargin
 {
     self.backgroundColor = [UIColor whiteColor];
     self.separatorColor = [UIColor lightGrayColor];
-    self.separatorStyle = UITableViewCellSeparatorStyleNone;
+    self.separatorStyle = UITableViewCellSeparatorStyleSingleLine;
     self.topMargin = 0;
 
     self.autoresizingMask = UIViewAutoresizingFlexibleMargins;
@@ -185,9 +187,8 @@ UIViewAutoresizingFlexibleTopMargin
 
                  if (suggestionMode==Normal) {
                      // Scanner used and one suggestion matched scanned code, so select match
-                     if (self.suggestions.count == 1 && _isLaunchedWithScanner) {
+                     if (self.suggestions.count == 1) {
                          [self selectMatch:0];
-                         _isLaunchedWithScanner = NO;
                      }
                      else {
                          [_table reloadData];
@@ -210,6 +211,38 @@ UIViewAutoresizingFlexibleTopMargin
     }
     else
     {
+        self.suggestions = nil;
+        [_table reloadData];
+    }
+}
+
+- (void)queryChangedWithSuccessBlock:(void (^)(NSArray *suggestions))successBlock
+{
+    if ([_queryTextField.text length] >= _itemsSource.minimumCharactersToTrigger) {
+        [_itemsSource itemsFor:_queryTextField.text whenReady:
+         ^(NSArray *suggestions)
+         {
+             self.suggestions = suggestions;
+             
+             if (suggestionMode==Normal) {
+                 // Scanner used and one suggestion matched scanned code, so select match
+                 if (self.suggestions.count == 1) {                    
+                      successBlock(self.suggestions);
+                 }
+                 else {
+                     [_table reloadData];
+                     
+                     // show suggestions table view
+                     if (self.suggestions.count > 0 && !_visible) {
+                         [_contextController.view addSubview:self];
+                         _visible = YES;
+                     }
+                     successBlock(self.suggestions);
+                 }
+             }
+         }];
+    }
+    else {
         self.suggestions = nil;
         [_table reloadData];
     }
@@ -259,8 +292,10 @@ UIViewAutoresizingFlexibleTopMargin
 
 - (void)keyboardWillHide:(NSNotification *)notification
 {
-    [self removeFromSuperview];
-    _visible = NO;
+    if (suggestionMode == Popover) {
+        [self removeFromSuperview];
+        _visible = NO;
+    }
 }
 
 #pragma mark - Table view data source
@@ -268,6 +303,11 @@ UIViewAutoresizingFlexibleTopMargin
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
 {
     return self.suggestions.count;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    return AUTOCOMPLETE_CELL_HEIGHT;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
