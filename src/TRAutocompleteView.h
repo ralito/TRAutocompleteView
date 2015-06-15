@@ -36,6 +36,14 @@ typedef enum SuggestionMode : NSUInteger {
     Popover
 } SuggestionMode;
 
+
+typedef enum  TRInfiniteScrollingState : NSUInteger {
+    TRInfiniteScrollingStateStopped = 0,
+    TRInfiniteScrollingStateTriggered,
+    TRInfiniteScrollingStateLoading,
+    TRInfiniteScrollingStateAll = 10
+} TRInfiniteScrollingState;
+
 @protocol TRAutocompleteItemsSource;
 @protocol TRAutocompletionCellFactory;
 @protocol TRSuggestionItem;
@@ -44,13 +52,15 @@ typedef enum SuggestionMode : NSUInteger {
 @interface TRAutocompleteView : UIView
 
 @property(readonly) id <TRSuggestionItem> selectedSuggestion;
-@property(readonly) NSArray *suggestions;
+@property(readonly) NSMutableArray *suggestions;
 
 @property(copy) didAutocompletionBlock autocompletionBlock;
 
 @property(nonatomic) UIColor *separatorColor;
 @property(nonatomic) UITableViewCellSeparatorStyle separatorStyle;
 
+@property (nonatomic, readwrite) CGFloat originalBottomInset;
+@property (nonatomic, readonly) TRInfiniteScrollingState state;
 @property(nonatomic) CGFloat topMargin;
 
 @property(readonly) SuggestionMode suggestionMode;

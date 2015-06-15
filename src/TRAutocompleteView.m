@@ -30,6 +30,7 @@
 #import "TRAutocompleteView.h"
 #import "TRAutocompleteItemsSource.h"
 #import "TRAutocompletionCellFactory.h"
+#import "UIScrollView+infiniteScrolling.h"
 
 #define UIViewAutoresizingFlexibleMargins   \
 UIViewAutoresizingFlexibleBottomMargin    | \
@@ -42,7 +43,10 @@ static const CGFloat AUTOCOMPLETE_CELL_HEIGHT = 64.0f;
 @interface TRAutocompleteView () <UITableViewDelegate, UITableViewDataSource>
 
 @property(readwrite) id <TRSuggestionItem> selectedSuggestion;
-@property(readwrite) NSArray *suggestions;
+@property(readwrite) NSMutableArray *suggestions;
+@property (nonatomic, readwrite) TRInfiniteScrollingState state;
+@property (nonatomic, copy) void (^infiniteScrollingHandler)(void);
+
 
 - (BOOL)isSearchTextField;
 
@@ -94,7 +98,7 @@ static const CGFloat AUTOCOMPLETE_CELL_HEIGHT = 64.0f;
     _cellFactory = factory;
     _contextController = controller;
     autocompletionBlock=autocompleteBlock_;
-    self.suggestions = nil;
+    self.suggestions = [NSMutableArray new];
     suggestionsList.suggestionsArray = nil;
     
     if (self) {
@@ -147,6 +151,7 @@ static const CGFloat AUTOCOMPLETE_CELL_HEIGHT = 64.0f;
     self.topMargin = 0;
 
     self.autoresizingMask = UIViewAutoresizingFlexibleMargins;
+    self.state = TRInfiniteScrollingStateStopped;
 }
 
 - (void)setupTableView
@@ -157,7 +162,8 @@ static const CGFloat AUTOCOMPLETE_CELL_HEIGHT = 64.0f;
     _table.separatorStyle = self.separatorStyle;
     _table.delegate = self;
     _table.dataSource = self;
-    
+    self.originalBottomInset = _table.contentInset.bottom;
+
     // Enable scrolling and slight padding @ bottom of table view
     UIEdgeInsets edgeInsets = UIEdgeInsetsMake(0, 0, 10, 0);
     [_table setContentInset:edgeInsets];
@@ -169,10 +175,15 @@ static const CGFloat AUTOCOMPLETE_CELL_HEIGHT = 64.0f;
 
 - (void)queryChanged:(id)sender
 {
+    // TODO: Make usable if existing search vs. new search
+    __block NSMutableArray *existingSuggestions = [self.suggestions mutableCopy];
+
     if ([_queryTextField.text length] >= _itemsSource.minimumCharactersToTrigger) {
-        [_itemsSource itemsFor:_queryTextField.text whenReady:
+        [_itemsSource itemsFor:_queryTextField.text withOffset:existingSuggestions.count whenReady:
          ^(NSArray *suggestions)
          {
+             self.state = TRInfiniteScrollingStateStopped;
+             
              if (_queryTextField.text.length
                  < _itemsSource.minimumCharactersToTrigger) {
                  self.suggestions = nil;
@@ -183,7 +194,10 @@ static const CGFloat AUTOCOMPLETE_CELL_HEIGHT = 64.0f;
                  }
              }
              else {
-                 self.suggestions = suggestions;
+                 // TODO: Make usable if existing search vs. new search
+                 existingSuggestions = suggestions;
+                 [existingSuggestions addObjectsFromArray:suggestions];
+                 self.suggestions = existingSuggestions;
 
                  if (suggestionMode==Normal) {
                      // Scanner used and one suggestion matched scanned code, so select match
@@ -219,9 +233,11 @@ static const CGFloat AUTOCOMPLETE_CELL_HEIGHT = 64.0f;
 - (void)queryChangedWithSuccessBlock:(void (^)(NSArray *suggestions))successBlock
 {
     if ([_queryTextField.text length] >= _itemsSource.minimumCharactersToTrigger) {
-        [_itemsSource itemsFor:_queryTextField.text whenReady:
+        [_itemsSource itemsFor:_queryTextField.text withOffset:0 whenReady:
          ^(NSArray *suggestions)
          {
+             self.state = TRInfiniteScrollingStateStopped;
+
              self.suggestions = suggestions;
              
              if (suggestionMode==Normal) {
@@ -287,6 +303,7 @@ static const CGFloat AUTOCOMPLETE_CELL_HEIGHT = 64.0f;
                                 calculatedY,
                                 _contextController.view.frame.size.width,
                                 calculatedHeight);
+        _table.contentSize = CGSizeMake(self.frame.size.width, self.frame.size.height);
     }
 }
 
@@ -336,6 +353,68 @@ static const CGFloat AUTOCOMPLETE_CELL_HEIGHT = 64.0f;
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
     [self selectMatch:indexPath.row];
+}
+
+#pragma mark - Scroll view delegate
+
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context {
+    if ([keyPath isEqualToString:@"contentOffset"])
+        [self scrollViewDidScroll:_table];
+    else if([keyPath isEqualToString:@"contentSize"]) {
+        [self layoutSubviews];
+        self.frame = CGRectMake(0, _table.contentSize.height, _table.bounds.size.width, 60);
+    }
+}
+
+- (void)scrollViewDidScroll:(UIScrollView *)scrollView
+{
+    CGPoint contentOffset = _table.contentOffset;
+    if (self.state != TRInfiniteScrollingStateLoading) {
+        CGFloat scrollViewContentHeight = _table.contentSize.height;
+        CGFloat scrollOffsetThreshold = scrollViewContentHeight - _table.bounds.size.height;
+
+        if (!_table.isDragging  && self.state == TRInfiniteScrollingStateTriggered) {
+            // loading
+            self.state = TRInfiniteScrollingStateLoading;
+            NSLog(@"loading data...");
+        }
+        else if(contentOffset.y > scrollOffsetThreshold  && self.state == TRInfiniteScrollingStateStopped && _table.isDragging) {
+            // trigger
+            self.state = TRInfiniteScrollingStateTriggered;
+            NSLog(@"Should trigger new load of data...");
+            [self queryChanged:nil];
+        }
+        else if(contentOffset.y < scrollOffsetThreshold && self.state != TRInfiniteScrollingStateStopped) {
+            // stopped
+            self.state = TRInfiniteScrollingStateStopped;
+            NSLog(@"stopped dragging");
+        }
+    }
+}
+
+- (void)setState:(TRInfiniteScrollingState)newState {
+    
+    if(_state == newState)
+        return;
+    
+    TRInfiniteScrollingState previousState = _state;
+    _state = newState;
+
+    switch (newState) {
+        case TRInfiniteScrollingStateStopped:
+            break;
+            
+        case TRInfiniteScrollingStateTriggered:
+            break;
+            
+        case TRInfiniteScrollingStateLoading:
+            break;
+    }
+    
+    if (previousState == TRInfiniteScrollingStateTriggered && newState == TRInfiniteScrollingStateLoading && self.infiniteScrollingHandler) {
+        NSLog(@"FETCH NEW RESULTS");
+        self.infiniteScrollingHandler();
+    }
 }
 
 #pragma mark - Selection utlity methods

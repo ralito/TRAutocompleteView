@@ -42,7 +42,7 @@ typedef void (^didAutocompletionBlock)(id <TRSuggestionItem>);
 @protocol TRAutocompleteItemsSource <NSObject>
 
 - (NSUInteger)minimumCharactersToTrigger;
-- (void)itemsFor:(NSString *)query whenReady:(void (^)(NSArray *))suggestionsReady;
+- (void)itemsFor:(NSString *)query withOffset:(NSUInteger)currentOffset whenReady:(void (^)(NSArray *))suggestionsReady;
 
 @property (retain) id<TRSuggestionItem> selectedSuggestion;
 
