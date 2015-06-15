@@ -37,6 +37,8 @@ UIViewAutoresizingFlexibleLeftMargin      | \
 UIViewAutoresizingFlexibleRightMargin     | \
 UIViewAutoresizingFlexibleTopMargin
 
+static const CGFloat AUTOCOMPLETE_CELL_HEIGHT = 64.0f;
+
 @interface TRAutocompleteView () <UITableViewDelegate, UITableViewDataSource>
 
 @property(readwrite) id <TRSuggestionItem> selectedSuggestion;
@@ -141,7 +143,7 @@ UIViewAutoresizingFlexibleTopMargin
 {
     self.backgroundColor = [UIColor whiteColor];
     self.separatorColor = [UIColor lightGrayColor];
-    self.separatorStyle = UITableViewCellSeparatorStyleNone;
+    self.separatorStyle = UITableViewCellSeparatorStyleSingleLine;
     self.topMargin = 0;
 
     self.autoresizingMask = UIViewAutoresizingFlexibleMargins;
@@ -185,9 +187,8 @@ UIViewAutoresizingFlexibleTopMargin
 
                  if (suggestionMode==Normal) {
                      // Scanner used and one suggestion matched scanned code, so select match
-                     if (self.suggestions.count == 1 && _isLaunchedWithScanner) {
+                     if (self.suggestions.count == 1) {
                          [self selectMatch:0];
-                         _isLaunchedWithScanner = NO;
                      }
                      else {
                          [_table reloadData];
@@ -215,11 +216,45 @@ UIViewAutoresizingFlexibleTopMargin
     }
 }
 
+- (void)queryChangedWithSuccessBlock:(void (^)(NSArray *suggestions))successBlock
+{
+    if ([_queryTextField.text length] >= _itemsSource.minimumCharactersToTrigger) {
+        [_itemsSource itemsFor:_queryTextField.text whenReady:
+         ^(NSArray *suggestions)
+         {
+             self.suggestions = suggestions;
+             
+             if (suggestionMode==Normal) {
+                 // Scanner used and one suggestion matched scanned code, so select match
+                 if (self.suggestions.count == 1) {                    
+                      successBlock(self.suggestions);
+                 }
+                 else {
+                     [_table reloadData];
+                     
+                     // show suggestions table view
+                     if (self.suggestions.count > 0 && !_visible) {
+                         [_contextController.view addSubview:self];
+                         _visible = YES;
+                     }
+                     successBlock(self.suggestions);
+                 }
+             }
+         }];
+    }
+    else {
+        self.suggestions = nil;
+        [_table reloadData];
+    }
+}
+
 #pragma mark - Keyboard notification methods
 
 - (void)keyboardWillBeShown:(NSNotification *)notification
 {
     if (suggestionMode==Normal) {
+        BOOL isIPad = (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad);
+
         CGRect controlFrame;
         // Forces table view to entire width of view
         // inheriting from the size of the UISearchBar included in the view controller
@@ -234,11 +269,15 @@ UIViewAutoresizingFlexibleTopMargin
         // considering orientation and position of controlFrame (textField), statusBar,
         // and keyboard height.
         NSDictionary *info = [notification userInfo];
-        CGSize kbSize = [[info objectForKey:UIKeyboardFrameBeginUserInfoKey] CGRectValue].size;
+        CGSize kbSize = [[info objectForKey:UIKeyboardFrameEndUserInfoKey] CGRectValue].size;
 
         CGFloat contextViewHeight = _contextController.view.frame.size.height;
-        CGFloat calculatedY = controlFrame.origin.y + controlFrame.size.height + StatusBarHeight();
+        CGFloat calculatedY = controlFrame.origin.y + controlFrame.size.height + (isIPad ? 0 : StatusBarHeight());
         CGFloat calculatedHeight = contextViewHeight - calculatedY - kbSize.height;
+
+        // Multiplier for dynamic height of iPad's FormSheet to resize view/tableView frame
+        if (isIPad)
+            calculatedHeight *= 1.6;
 
         // Keyboard displayed over the top of TabBarController,
         // so need to also add padding to height
@@ -253,8 +292,10 @@ UIViewAutoresizingFlexibleTopMargin
 
 - (void)keyboardWillHide:(NSNotification *)notification
 {
-    [self removeFromSuperview];
-    _visible = NO;
+    if (suggestionMode == Popover) {
+        [self removeFromSuperview];
+        _visible = NO;
+    }
 }
 
 #pragma mark - Table view data source
@@ -262,6 +303,11 @@ UIViewAutoresizingFlexibleTopMargin
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
 {
     return self.suggestions.count;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    return AUTOCOMPLETE_CELL_HEIGHT;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
