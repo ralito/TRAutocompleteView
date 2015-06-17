@@ -188,8 +188,11 @@ static const CGFloat   AUTOCOMPLETE_TOP_MARGIN_DEFAULT = 0.0f;
 
 - (void)queryChanged:(id)sender
 {
+    // if textField is currently editing, we always want 0th start index of paged results
+    NSNumber *startIndex = (_queryTextField.isEditing ? @(0) : @(self.suggestions.count));
+
     if ([_queryTextField.text length] >= _itemsSource.minimumCharactersToTrigger) {
-        [_itemsSource itemsFor:_queryTextField.text withStartIndex:@(self.suggestions.count) whenReady:
+        [_itemsSource itemsFor:_queryTextField.text withStartIndex:startIndex whenReady:
          ^(NSArray *suggestions)
          {
              if (_queryTextField.text.length
