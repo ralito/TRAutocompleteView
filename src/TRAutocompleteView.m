@@ -54,31 +54,28 @@ static const CGFloat AUTOCOMPLETE_TOP_MARGIN_DEFAULT = 0.0f;
 @implementation TRAutocompleteView
 {
     BOOL _visible;
-    
+
     __weak UITextField *_queryTextField;
     __weak UIViewController *_contextController;
-    
+
     UITableView *_table;
     id <TRAutocompleteItemsSource> _itemsSource;
     id <TRAutocompletionCellFactory> _cellFactory;
-    
-    SuggestionsList* suggestionsList;
 }
 
-@synthesize suggestionMode;
 @synthesize autocompletionBlock;
 
 + (TRAutocompleteView *)autocompleteViewBindedTo:(UITextField *)textField
                                      usingSource:(id <TRAutocompleteItemsSource>)itemsSource
                                      cellFactory:(id <TRAutocompletionCellFactory>)factory
-                                    presentingIn:(UIViewController *)controller withMode:(SuggestionMode)mode
+                                    presentingIn:(UIViewController *)controller
                                whenSelectionMade:(didAutocompletionBlock)autocompleteBlock
 {
     return [[TRAutocompleteView alloc] initWithFrame:CGRectZero
                                            textField:textField
                                          itemsSource:itemsSource
                                          cellFactory:factory
-                                          controller:controller withMode:mode
+                                          controller:controller
                                    whenSelectionMade:autocompleteBlock
             ];
 }
@@ -87,30 +84,23 @@ static const CGFloat AUTOCOMPLETE_TOP_MARGIN_DEFAULT = 0.0f;
           textField:(UITextField *)textField
         itemsSource:(id <TRAutocompleteItemsSource>)itemsSource
         cellFactory:(id <TRAutocompletionCellFactory>)factory
-         controller:(UIViewController *)controller withMode:(SuggestionMode)mode whenSelectionMade:(didAutocompletionBlock)autocompleteBlock_
+         controller:(UIViewController *)controller whenSelectionMade:(didAutocompletionBlock)autocompleteBlock_
 {
     self = [super initWithFrame:frame];
-    suggestionMode = mode;
-    
+
     _queryTextField = textField;
     _itemsSource = itemsSource;
     _cellFactory = factory;
     _contextController = controller;
     autocompletionBlock=autocompleteBlock_;
     self.suggestions = [NSMutableArray new];
-    suggestionsList.suggestionsArray = nil;
     
     if (self) {
-        if (mode==Normal) {
-
-            // Preset appearance and autoresizing setup
-            [self loadDefaults];
-            
-            // Initialize and configure table view, with autolayout constraints
-            [self setupTableView];
-        } else {
-            suggestionsList = [[SuggestionsList alloc] initWithAutocompleteItemSource:_itemsSource andAutocompletionBlock:autocompleteBlock_ withCellFont:_cellFactory.cellFont];
-        }
+        // Preset appearance and autoresizing setup
+        [self loadDefaults];
+        
+        // Initialize and configure table view, with autolayout constraints
+        [self setupTableView];
         
         // Setup action for callback when new search query returns results
         [_queryTextField addTarget:self action:@selector(queryChanged:) forControlEvents:UIControlEventEditingChanged];
@@ -167,7 +157,7 @@ static const CGFloat AUTOCOMPLETE_TOP_MARGIN_DEFAULT = 0.0f;
             [_table insertRowsAtIndexPaths:indexPaths withRowAnimation:UITableViewRowAnimationBottom];
             [_table endUpdates];
 
-            // End scrolling animation
+            // End loading animation
             [_table finishInfiniteScroll];
         }];
     }];
@@ -203,16 +193,10 @@ static const CGFloat AUTOCOMPLETE_TOP_MARGIN_DEFAULT = 0.0f;
              if (_queryTextField.text.length
                  < _itemsSource.minimumCharactersToTrigger) {
                  self.suggestions = nil;
-                 if (suggestionMode==Normal)
-                     [_table reloadData];
-                 else {
-                     suggestionsList.suggestionsArray=self.suggestions;
-                 }
              }
              else {
                  self.suggestions = suggestions;
 
-                 if (suggestionMode==Normal) {
                      // Scanner used and one suggestion matched scanned code, so select match
                      if (self.suggestions.count == 1) {
                          [self selectMatch:0];
@@ -226,13 +210,6 @@ static const CGFloat AUTOCOMPLETE_TOP_MARGIN_DEFAULT = 0.0f;
                              _visible = YES;
                          }
                      }
-                 } else {
-                     // show popover
-                     if (self.suggestions.count > 0) {
-                         suggestionsList.suggestionsArray=self.suggestions;
-                         [suggestionsList showSuggestionsFor:_queryTextField];
-                     }
-                 }
              }
          }];
     }
@@ -249,23 +226,21 @@ static const CGFloat AUTOCOMPLETE_TOP_MARGIN_DEFAULT = 0.0f;
         [_itemsSource itemsFor:_queryTextField.text withStartIndex:@(self.suggestions.count) whenReady:
          ^(NSArray *suggestions)
          {
-             if (suggestionMode==Normal) {
-                 // Scanner code match == 1 OR _queryTextField match == 1 - Select match!
-                 if (self.suggestions.count == 1) {                    
-                      successBlock(suggestions);
+             // Scanner code match == 1 OR _queryTextField match == 1 - Select match!
+             if (self.suggestions.count == 1) {                    
+                  successBlock(suggestions);
+             }
+             else {
+                 if (self.isLaunchedWithScanner) {
+                     [self refreshTableViewWithSuggestions:suggestions];
                  }
-                 else {
-                     if (self.isLaunchedWithScanner) {
-                         [self refreshTableViewWithSuggestions:suggestions];
-                     }
 
-                     // show suggestions table view
-                     if (self.suggestions.count > 0 && !_visible) {
-                         [_contextController.view addSubview:self];
-                         _visible = YES;
-                     }
-                     successBlock(suggestions);
+                 // show suggestions table view
+                 if (self.suggestions.count > 0 && !_visible) {
+                     [_contextController.view addSubview:self];
+                     _visible = YES;
                  }
+                 successBlock(suggestions);
              }
          }];
     }
@@ -285,51 +260,43 @@ static const CGFloat AUTOCOMPLETE_TOP_MARGIN_DEFAULT = 0.0f;
 
 - (void)keyboardWillBeShown:(NSNotification *)notification
 {
-    if (suggestionMode==Normal) {
-        BOOL isIPad = (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad);
+    BOOL isIPad = (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad);
 
-        CGRect controlFrame;
-        // Forces table view to entire width of view
-        // inheriting from the size of the UISearchBar included in the view controller
-        if ([self isSearchTextField]) {
-            controlFrame = _queryTextField.superview.frame;
-        }
-        else {
-            controlFrame = _queryTextField.frame;
-        }
-
-        // All calculations below are to determine autocompleteView's frame,
-        // considering orientation and position of controlFrame (textField), statusBar,
-        // and keyboard height.
-        NSDictionary *info = [notification userInfo];
-        CGSize kbSize = [[info objectForKey:UIKeyboardFrameEndUserInfoKey] CGRectValue].size;
-
-        CGFloat contextViewHeight = _contextController.view.frame.size.height;
-        CGFloat calculatedY = controlFrame.origin.y + controlFrame.size.height + (isIPad ? 0 : StatusBarHeight());
-        CGFloat calculatedHeight = contextViewHeight - calculatedY - kbSize.height;
-
-        // Multiplier for dynamic height of iPad's FormSheet to resize view/tableView frame
-        if (isIPad)
-            calculatedHeight *= 1.6;
-
-        // Keyboard displayed over the top of TabBarController,
-        // so need to also add padding to height
-        calculatedHeight += _contextController.tabBarController.tabBar.frame.size.height;
-
-        self.frame = CGRectMake(controlFrame.origin.x,
-                                calculatedY,
-                                _contextController.view.frame.size.width,
-                                calculatedHeight);
+    CGRect controlFrame;
+    // Forces table view to entire width of view
+    // inheriting from the size of the UISearchBar included in the view controller
+    if ([self isSearchTextField]) {
+        controlFrame = _queryTextField.superview.frame;
     }
+    else {
+        controlFrame = _queryTextField.frame;
+    }
+
+    // All calculations below are to determine autocompleteView's frame,
+    // considering orientation and position of controlFrame (textField), statusBar,
+    // and keyboard height.
+    NSDictionary *info = [notification userInfo];
+    CGSize kbSize = [[info objectForKey:UIKeyboardFrameEndUserInfoKey] CGRectValue].size;
+
+    CGFloat contextViewHeight = _contextController.view.frame.size.height;
+    CGFloat calculatedY = controlFrame.origin.y + controlFrame.size.height + (isIPad ? 0 : StatusBarHeight());
+    CGFloat calculatedHeight = contextViewHeight - calculatedY - kbSize.height;
+
+    // Multiplier for dynamic height of iPad's FormSheet to resize view/tableView frame
+    if (isIPad)
+        calculatedHeight *= 1.6;
+
+    // Keyboard displayed over the top of TabBarController,
+    // so need to also add padding to height
+    calculatedHeight += _contextController.tabBarController.tabBar.frame.size.height;
+
+    self.frame = CGRectMake(controlFrame.origin.x,
+                            calculatedY,
+                            _contextController.view.frame.size.width,
+                            calculatedHeight);
 }
 
-- (void)keyboardWillHide:(NSNotification *)notification
-{
-    if (suggestionMode == Popover) {
-        [self removeFromSuperview];
-        _visible = NO;
-    }
-}
+- (void)keyboardWillHide:(NSNotification *)notification {}
 
 #pragma mark - Table view data source
 
@@ -375,17 +342,6 @@ static const CGFloat AUTOCOMPLETE_TOP_MARGIN_DEFAULT = 0.0f;
 
 - (BOOL)selectSingleMatch
 {
-    if (suggestionsList.matchedSuggestions.count==1){
-        
-        [self selectMatch:0];
-        [suggestionsList.popOver dismissPopoverAnimated:YES];
-        
-        return YES;
-    }
-    if (suggestionsList.matchedSuggestions.count>1) {
-        return NO;
-    }
-    
     return NO;
 }
 

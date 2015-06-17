@@ -28,45 +28,34 @@
 //
 
 #import <Foundation/Foundation.h>
-#import "SuggestionsList.h"
 #import "TRAutocompleteItemsSource.h"
 
-typedef enum SuggestionMode : NSUInteger {
-    Normal,
-    Popover
-} SuggestionMode;
 
 @protocol TRAutocompleteItemsSource;
 @protocol TRAutocompletionCellFactory;
 @protocol TRSuggestionItem;
 
-
 @interface TRAutocompleteView : UIView
+
+@property(nonatomic, assign) BOOL isLaunchedWithScanner;
 
 @property(readonly) id <TRSuggestionItem> selectedSuggestion;
 @property(nonatomic, strong) NSMutableArray *suggestions;
-
 @property(copy) didAutocompletionBlock autocompletionBlock;
 
 @property(nonatomic) UIColor *separatorColor;
 @property(nonatomic) UITableViewCellSeparatorStyle separatorStyle;
-
 @property(nonatomic) CGFloat topMargin;
-
-@property(readonly) SuggestionMode suggestionMode;
-
-@property(nonatomic, assign) BOOL isLaunchedWithScanner;
-
 
 + (TRAutocompleteView *)autocompleteViewBindedTo:(UITextField *)textField
                                      usingSource:(id <TRAutocompleteItemsSource>)itemsSource
                                      cellFactory:(id <TRAutocompletionCellFactory>)factory
-                                    presentingIn:(UIViewController *)controller withMode:(SuggestionMode)mode
+                                    presentingIn:(UIViewController *)controller
                                whenSelectionMade:(didAutocompletionBlock)autocompleteBlock;
 
 - (void)queryChanged:(id)sender;
 - (void)queryChangedWithSuccessBlock:(void (^)(NSArray *suggestions))successBlock;
 - (void)refreshTableViewWithSuggestions:(NSArray *)suggestions;
--(BOOL)selectSingleMatch;
+- (BOOL)selectSingleMatch;
 
 @end
