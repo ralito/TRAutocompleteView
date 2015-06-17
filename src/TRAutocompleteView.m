@@ -249,16 +249,16 @@ static const CGFloat AUTOCOMPLETE_TOP_MARGIN_DEFAULT = 0.0f;
         [_itemsSource itemsFor:_queryTextField.text withStartIndex:@(self.suggestions.count) whenReady:
          ^(NSArray *suggestions)
          {
-//             self.suggestions = suggestions;
-             
              if (suggestionMode==Normal) {
-                 // Scanner used and one suggestion matched scanned code, so select match
+                 // Scanner code match == 1 OR _queryTextField match == 1 - Select match!
                  if (self.suggestions.count == 1) {                    
                       successBlock(suggestions);
                  }
                  else {
-//                     [_table reloadData];
-                     
+                     if (self.isLaunchedWithScanner) {
+                         [self refreshTableViewWithSuggestions:suggestions];
+                     }
+
                      // show suggestions table view
                      if (self.suggestions.count > 0 && !_visible) {
                          [_contextController.view addSubview:self];
@@ -273,6 +273,12 @@ static const CGFloat AUTOCOMPLETE_TOP_MARGIN_DEFAULT = 0.0f;
         self.suggestions = nil;
         [_table reloadData];
     }
+}
+
+- (void)refreshTableViewWithSuggestions:(NSArray *)suggestions
+{
+    self.suggestions = [suggestions mutableCopy];
+    [_table reloadData];
 }
 
 #pragma mark - Keyboard notification methods
