@@ -39,9 +39,10 @@ UIViewAutoresizingFlexibleLeftMargin      | \
 UIViewAutoresizingFlexibleRightMargin     | \
 UIViewAutoresizingFlexibleTopMargin
 
-static const CGFloat AUTOCOMPLETE_CELL_HEIGHT = 64.0f;
-static const CGFloat AUTOCOMPLETE_TABLEVIEW_INSET_BOTTOM = 10.0f;
-static const CGFloat AUTOCOMPLETE_TOP_MARGIN_DEFAULT = 0.0f;
+static const NSString* AUTOCOMPLETE_CELL_IDENTIFIER = @"TRAutocompleteCell";
+static const CGFloat   AUTOCOMPLETE_CELL_HEIGHT  = 64.0f;
+static const CGFloat   AUTOCOMPLETE_TABLEVIEW_INSET_BOTTOM = 10.0f;
+static const CGFloat   AUTOCOMPLETE_TOP_MARGIN_DEFAULT = 0.0f;
 
 @interface TRAutocompleteView () <UITableViewDelegate, UITableViewDataSource>
 
@@ -92,9 +93,9 @@ static const CGFloat AUTOCOMPLETE_TOP_MARGIN_DEFAULT = 0.0f;
     _itemsSource = itemsSource;
     _cellFactory = factory;
     _contextController = controller;
-    autocompletionBlock=autocompleteBlock_;
+    autocompletionBlock = autocompleteBlock_;
     self.suggestions = [NSMutableArray new];
-    
+
     if (self) {
         // Preset appearance and autoresizing setup
         [self loadDefaults];
@@ -141,6 +142,7 @@ static const CGFloat AUTOCOMPLETE_TOP_MARGIN_DEFAULT = 0.0f;
     __weak typeof(self) weakSelf = self;
     // Block executed when user scrolls to bottom of table
     [_table addInfiniteScrollWithHandler:^(id scrollView) {
+
         // Initiate new query based on current suggestions.count
         [self queryChangedWithSuccessBlock:^(NSArray *suggestionsReturned) {
             NSMutableArray *indexPaths = [@[] mutableCopy];
@@ -213,8 +215,7 @@ static const CGFloat AUTOCOMPLETE_TOP_MARGIN_DEFAULT = 0.0f;
              }
          }];
     }
-    else
-    {
+    else {
         self.suggestions = nil;
         [_table reloadData];
     }
@@ -312,22 +313,21 @@ static const CGFloat AUTOCOMPLETE_TOP_MARGIN_DEFAULT = 0.0f;
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    static NSString *identifier = @"TRAutocompleteCell";
-    
-    id cell = [tableView dequeueReusableCellWithIdentifier:identifier];
+    id cell = [tableView dequeueReusableCellWithIdentifier:AUTOCOMPLETE_CELL_IDENTIFIER];
     if (cell == nil)
-        cell = [_cellFactory createReusableCellWithIdentifier:identifier];
+        cell = [_cellFactory createReusableCellWithIdentifier:AUTOCOMPLETE_CELL_IDENTIFIER];
     
     NSAssert([cell isKindOfClass:[UITableViewCell class]], @"Cell must inherit from UITableViewCell");
     NSAssert([cell conformsToProtocol:@protocol(TRAutocompletionCell)], @"Cell must conform TRAutocompletionCell");
     UITableViewCell <TRAutocompletionCell> *completionCell = (UITableViewCell <TRAutocompletionCell> *) cell;
-    
+
     id suggestion = self.suggestions[(NSUInteger) indexPath.row];
     NSAssert([suggestion conformsToProtocol:@protocol(TRSuggestionItem)], @"Suggestion item must conform TRSuggestionItem");
     id <TRSuggestionItem> suggestionItem = (id <TRSuggestionItem>) suggestion;
-    
+
+    // set cell's textLabel to item's completionText
     [completionCell updateWith:suggestionItem];
-    
+
     return cell;
 }
 
