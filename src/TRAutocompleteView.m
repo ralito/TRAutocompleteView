@@ -104,7 +104,7 @@ static const CGFloat   AUTOCOMPLETE_TOP_MARGIN_DEFAULT = 0.0f;
         [self setupTableView];
         
         // Setup action for callback when new search query returns results
-        [_queryTextField addTarget:self action:@selector(queryChanged:) forControlEvents:UIControlEventEditingChanged];
+        [_queryTextField addTarget:self action:@selector(textFieldChanged:) forControlEvents:UIControlEventEditingChanged];
         [[NSNotificationCenter defaultCenter] addObserver:self
                                                  selector:@selector(keyboardWillBeShown:)
                                                      name:UIKeyboardWillShowNotification
@@ -186,7 +186,7 @@ static const CGFloat   AUTOCOMPLETE_TOP_MARGIN_DEFAULT = 0.0f;
 
 #pragma mark - Actions
 
-- (void)queryChanged:(id)sender
+- (void)textFieldChanged:(id)sender
 {
     // if textField is currently editing, we always want 0th start index of paged results
     NSNumber *startIndex = (_queryTextField.isEditing ? @(0) : @(self.suggestions.count));
@@ -202,7 +202,7 @@ static const CGFloat   AUTOCOMPLETE_TOP_MARGIN_DEFAULT = 0.0f;
              else {
                  self.suggestions = suggestions;
 
-                     // Scanner used and one suggestion matched scanned code, so select match
+                     // Query returned one result, so select
                      if (self.suggestions.count == 1) {
                          [self selectMatch:0];
                      }
@@ -230,7 +230,7 @@ static const CGFloat   AUTOCOMPLETE_TOP_MARGIN_DEFAULT = 0.0f;
         [_itemsSource itemsFor:_queryTextField.text withStartIndex:@(self.suggestions.count) whenReady:
          ^(NSArray *suggestions)
          {
-             // Scanner code match == 1 OR _queryTextField match == 1 - Select match!
+             // Scanner code matched == 1 OR _queryTextField matched == 1 - Select match!
              if (self.suggestions.count == 1) {                    
                   successBlock(suggestions);
              }
@@ -379,7 +379,7 @@ CGFloat StatusBarHeight()
 
 - (void)dealloc
 {
-    [_queryTextField removeTarget:self action:@selector(queryChanged:) forControlEvents:UIControlEventEditingChanged];
+    [_queryTextField removeTarget:self action:@selector(textFieldChanged:) forControlEvents:UIControlEventEditingChanged];
 
     [[NSNotificationCenter defaultCenter]
      removeObserver:self
