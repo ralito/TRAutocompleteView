@@ -30,7 +30,8 @@
 #import "TRAutocompleteView.h"
 #import "TRAutocompleteItemsSource.h"
 #import "TRAutocompletionCellFactory.h"
-#import "UIScrollView+infiniteScrolling.h"
+#import "UIScrollView+InfiniteScroll.h"
+
 
 #define UIViewAutoresizingFlexibleMargins   \
 UIViewAutoresizingFlexibleBottomMargin    | \
@@ -39,14 +40,12 @@ UIViewAutoresizingFlexibleRightMargin     | \
 UIViewAutoresizingFlexibleTopMargin
 
 static const CGFloat AUTOCOMPLETE_CELL_HEIGHT = 64.0f;
+static const CGFloat AUTOCOMPLETE_TABLEVIEW_INSET_BOTTOM = 10.0f;
+static const CGFloat AUTOCOMPLETE_TOP_MARGIN_DEFAULT = 0.0f;
 
 @interface TRAutocompleteView () <UITableViewDelegate, UITableViewDataSource>
 
 @property(readwrite) id <TRSuggestionItem> selectedSuggestion;
-@property(readwrite) NSMutableArray *suggestions;
-@property (nonatomic, readwrite) TRInfiniteScrollingState state;
-@property (nonatomic, copy) void (^infiniteScrollingHandler)(void);
-
 
 - (BOOL)isSearchTextField;
 
@@ -107,21 +106,8 @@ static const CGFloat AUTOCOMPLETE_CELL_HEIGHT = 64.0f;
             // Preset appearance and autoresizing setup
             [self loadDefaults];
             
-            // Initialize and configure table view
+            // Initialize and configure table view, with autolayout constraints
             [self setupTableView];
-
-            // Add _table to autocompleteView to configure constraints
-            [self addSubview:_table];
-            [self addConstraints:[NSLayoutConstraint
-                                       constraintsWithVisualFormat:@"H:|-0-[_table]-0-|"
-                                       options:NSLayoutFormatDirectionLeadingToTrailing
-                                       metrics:nil
-                                       views:NSDictionaryOfVariableBindings(_table)]];
-            [self addConstraints:[NSLayoutConstraint
-                                       constraintsWithVisualFormat:@"V:|-0-[_table]-0-|"
-                                       options:NSLayoutFormatDirectionLeadingToTrailing
-                                       metrics:nil
-                                       views:NSDictionaryOfVariableBindings(_table)]];
         } else {
             suggestionsList = [[SuggestionsList alloc] initWithAutocompleteItemSource:_itemsSource andAutocompletionBlock:autocompleteBlock_ withCellFont:_cellFactory.cellFont];
         }
@@ -148,10 +134,9 @@ static const CGFloat AUTOCOMPLETE_CELL_HEIGHT = 64.0f;
     self.backgroundColor = [UIColor whiteColor];
     self.separatorColor = [UIColor lightGrayColor];
     self.separatorStyle = UITableViewCellSeparatorStyleSingleLine;
-    self.topMargin = 0;
+    self.topMargin = AUTOCOMPLETE_TOP_MARGIN_DEFAULT;
 
     self.autoresizingMask = UIViewAutoresizingFlexibleMargins;
-    self.state = TRInfiniteScrollingStateStopped;
 }
 
 - (void)setupTableView
@@ -162,28 +147,59 @@ static const CGFloat AUTOCOMPLETE_CELL_HEIGHT = 64.0f;
     _table.separatorStyle = self.separatorStyle;
     _table.delegate = self;
     _table.dataSource = self;
-    self.originalBottomInset = _table.contentInset.bottom;
+
+    __weak typeof(self) weakSelf = self;
+    // Block executed when user scrolls to bottom of table
+    [_table addInfiniteScrollWithHandler:^(id scrollView) {
+        // Initiate new query based on current suggestions.count
+        [self queryChangedWithSuccessBlock:^(NSArray *suggestionsReturned) {
+            NSMutableArray *indexPaths = [@[] mutableCopy];
+            NSInteger index = weakSelf.suggestions.count;
+            NSArray *newSuggestions = [suggestionsReturned copy];
+
+            for (id suggestion in newSuggestions) {
+                NSIndexPath *indexPath = [NSIndexPath indexPathForRow:index++ inSection:0];
+                [indexPaths addObject:indexPath];
+                [weakSelf.suggestions addObject:suggestion];
+            }
+            // Index paths to be added and animated onto table
+            [_table beginUpdates];
+            [_table insertRowsAtIndexPaths:indexPaths withRowAnimation:UITableViewRowAnimationBottom];
+            [_table endUpdates];
+
+            // End scrolling animation
+            [_table finishInfiniteScroll];
+        }];
+    }];
 
     // Enable scrolling and slight padding @ bottom of table view
-    UIEdgeInsets edgeInsets = UIEdgeInsetsMake(0, 0, 10, 0);
+    UIEdgeInsets edgeInsets = UIEdgeInsetsMake(0, 0, AUTOCOMPLETE_TABLEVIEW_INSET_BOTTOM, 0);
     [_table setContentInset:edgeInsets];
     [_table setScrollIndicatorInsets:edgeInsets];
     _table.translatesAutoresizingMaskIntoConstraints = NO;
+    
+    // Add _table to autocompleteView to configure constraints
+    [self addSubview:_table];
+    [self addConstraints:[NSLayoutConstraint
+                          constraintsWithVisualFormat:@"H:|-0-[_table]-0-|"
+                          options:NSLayoutFormatDirectionLeadingToTrailing
+                          metrics:nil
+                          views:NSDictionaryOfVariableBindings(_table)]];
+    [self addConstraints:[NSLayoutConstraint
+                          constraintsWithVisualFormat:@"V:|-0-[_table]-0-|"
+                          options:NSLayoutFormatDirectionLeadingToTrailing
+                          metrics:nil
+                          views:NSDictionaryOfVariableBindings(_table)]];
 }
 
 #pragma mark - Actions
 
 - (void)queryChanged:(id)sender
 {
-    // TODO: Make usable if existing search vs. new search
-    __block NSMutableArray *existingSuggestions = [self.suggestions mutableCopy];
-
     if ([_queryTextField.text length] >= _itemsSource.minimumCharactersToTrigger) {
-        [_itemsSource itemsFor:_queryTextField.text withOffset:existingSuggestions.count whenReady:
+        [_itemsSource itemsFor:_queryTextField.text withStartIndex:@(self.suggestions.count) whenReady:
          ^(NSArray *suggestions)
          {
-             self.state = TRInfiniteScrollingStateStopped;
-             
              if (_queryTextField.text.length
                  < _itemsSource.minimumCharactersToTrigger) {
                  self.suggestions = nil;
@@ -194,10 +210,7 @@ static const CGFloat AUTOCOMPLETE_CELL_HEIGHT = 64.0f;
                  }
              }
              else {
-                 // TODO: Make usable if existing search vs. new search
-                 existingSuggestions = suggestions;
-                 [existingSuggestions addObjectsFromArray:suggestions];
-                 self.suggestions = existingSuggestions;
+                 self.suggestions = suggestions;
 
                  if (suggestionMode==Normal) {
                      // Scanner used and one suggestion matched scanned code, so select match
@@ -233,27 +246,25 @@ static const CGFloat AUTOCOMPLETE_CELL_HEIGHT = 64.0f;
 - (void)queryChangedWithSuccessBlock:(void (^)(NSArray *suggestions))successBlock
 {
     if ([_queryTextField.text length] >= _itemsSource.minimumCharactersToTrigger) {
-        [_itemsSource itemsFor:_queryTextField.text withOffset:0 whenReady:
+        [_itemsSource itemsFor:_queryTextField.text withStartIndex:@(self.suggestions.count) whenReady:
          ^(NSArray *suggestions)
          {
-             self.state = TRInfiniteScrollingStateStopped;
-
-             self.suggestions = suggestions;
+//             self.suggestions = suggestions;
              
              if (suggestionMode==Normal) {
                  // Scanner used and one suggestion matched scanned code, so select match
                  if (self.suggestions.count == 1) {                    
-                      successBlock(self.suggestions);
+                      successBlock(suggestions);
                  }
                  else {
-                     [_table reloadData];
+//                     [_table reloadData];
                      
                      // show suggestions table view
                      if (self.suggestions.count > 0 && !_visible) {
                          [_contextController.view addSubview:self];
                          _visible = YES;
                      }
-                     successBlock(self.suggestions);
+                     successBlock(suggestions);
                  }
              }
          }];
@@ -303,7 +314,6 @@ static const CGFloat AUTOCOMPLETE_CELL_HEIGHT = 64.0f;
                                 calculatedY,
                                 _contextController.view.frame.size.width,
                                 calculatedHeight);
-        _table.contentSize = CGSizeMake(self.frame.size.width, self.frame.size.height);
     }
 }
 
@@ -353,68 +363,6 @@ static const CGFloat AUTOCOMPLETE_CELL_HEIGHT = 64.0f;
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
     [self selectMatch:indexPath.row];
-}
-
-#pragma mark - Scroll view delegate
-
-- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context {
-    if ([keyPath isEqualToString:@"contentOffset"])
-        [self scrollViewDidScroll:_table];
-    else if([keyPath isEqualToString:@"contentSize"]) {
-        [self layoutSubviews];
-        self.frame = CGRectMake(0, _table.contentSize.height, _table.bounds.size.width, 60);
-    }
-}
-
-- (void)scrollViewDidScroll:(UIScrollView *)scrollView
-{
-    CGPoint contentOffset = _table.contentOffset;
-    if (self.state != TRInfiniteScrollingStateLoading) {
-        CGFloat scrollViewContentHeight = _table.contentSize.height;
-        CGFloat scrollOffsetThreshold = scrollViewContentHeight - _table.bounds.size.height;
-
-        if (!_table.isDragging  && self.state == TRInfiniteScrollingStateTriggered) {
-            // loading
-            self.state = TRInfiniteScrollingStateLoading;
-            NSLog(@"loading data...");
-        }
-        else if(contentOffset.y > scrollOffsetThreshold  && self.state == TRInfiniteScrollingStateStopped && _table.isDragging) {
-            // trigger
-            self.state = TRInfiniteScrollingStateTriggered;
-            NSLog(@"Should trigger new load of data...");
-            [self queryChanged:nil];
-        }
-        else if(contentOffset.y < scrollOffsetThreshold && self.state != TRInfiniteScrollingStateStopped) {
-            // stopped
-            self.state = TRInfiniteScrollingStateStopped;
-            NSLog(@"stopped dragging");
-        }
-    }
-}
-
-- (void)setState:(TRInfiniteScrollingState)newState {
-    
-    if(_state == newState)
-        return;
-    
-    TRInfiniteScrollingState previousState = _state;
-    _state = newState;
-
-    switch (newState) {
-        case TRInfiniteScrollingStateStopped:
-            break;
-            
-        case TRInfiniteScrollingStateTriggered:
-            break;
-            
-        case TRInfiniteScrollingStateLoading:
-            break;
-    }
-    
-    if (previousState == TRInfiniteScrollingStateTriggered && newState == TRInfiniteScrollingStateLoading && self.infiniteScrollingHandler) {
-        NSLog(@"FETCH NEW RESULTS");
-        self.infiniteScrollingHandler();
-    }
 }
 
 #pragma mark - Selection utlity methods
