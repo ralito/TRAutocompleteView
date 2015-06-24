@@ -319,17 +319,27 @@ static const CGFloat   AUTOCOMPLETE_TOP_MARGIN_DEFAULT = 0.0f;
     UITableViewCell <TRAutocompletionCell> *completionCell = (UITableViewCell <TRAutocompletionCell> *) cell;
 
     id suggestion = self.suggestions[(NSUInteger) indexPath.row];
-
-    // Selected suggestion can be set before table is displayed from previously selected item
-    if (self.selectedSuggestion && self.selectedSuggestion == suggestion) {
-        completionCell.accessoryType = UITableViewCellAccessoryCheckmark;
-    }
-    // But we always want to default to None for potential dequed cells (IE, changing search results)
-    else {
-        completionCell.accessoryType = UITableViewCellAccessoryNone;
-    }
     NSAssert([suggestion conformsToProtocol:@protocol(TRSuggestionItem)], @"Suggestion item must conform TRSuggestionItem");
     id <TRSuggestionItem> suggestionItem = (id <TRSuggestionItem>) suggestion;
+
+    // Always default to None for potential dequed cells (IE, changing search results)
+    if (!self.selectedSuggestion) {
+        completionCell.accessoryType = UITableViewCellAccessoryNone;
+    }
+    // Selected suggestion can be set before table is displayed from previously selected item
+    else {
+        // Choices match directly
+        BOOL choiceMatch = (self.selectedSuggestion == suggestionItem);
+        if (choiceMatch) {
+            completionCell.accessoryType = UITableViewCellAccessoryCheckmark;
+        }
+
+        // Relationships need objectIdentifer comparison
+        BOOL relationshipSelector = [suggestionItem respondsToSelector:@selector(objectIdentifier)];
+        if (relationshipSelector && [[suggestionItem objectIdentifier] isEqualToNumber:[self.selectedSuggestion objectIdentifier]]) {
+            completionCell.accessoryType = UITableViewCellAccessoryCheckmark;
+        }
+    }
 
     // set cell's textLabel to item's completionText
     [completionCell updateWith:suggestionItem];

@@ -35,6 +35,10 @@
 
 - (NSString *)completionText;
 
+@optional
+
+- (NSNumber *)objectIdentifier;
+
 @end
 
 typedef void (^didAutocompletionBlock)(id <TRSuggestionItem>);
