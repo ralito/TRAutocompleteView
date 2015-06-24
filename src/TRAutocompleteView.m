@@ -182,6 +182,13 @@ static const CGFloat   AUTOCOMPLETE_TOP_MARGIN_DEFAULT = 0.0f;
                           options:NSLayoutFormatDirectionLeadingToTrailing
                           metrics:nil
                           views:NSDictionaryOfVariableBindings(_table)]];
+
+    // show suggestions table view
+    if (!_visible) {
+        [_contextController.view addSubview:self];
+        _visible = YES;
+    }
+    
 }
 
 #pragma mark - Actions
@@ -201,20 +208,7 @@ static const CGFloat   AUTOCOMPLETE_TOP_MARGIN_DEFAULT = 0.0f;
              }
              else {
                  self.suggestions = suggestions;
-
-                     // Query returned one result, so select
-                     if (self.suggestions.count == 1) {
-                         [self selectMatch:0];
-                     }
-                     else {
-                         [_table reloadData];
-
-                         // show suggestions table view
-                         if (self.suggestions.count > 0 && !_visible) {
-                             [_contextController.view addSubview:self];
-                             _visible = YES;
-                         }
-                     }
+                 [_table reloadData];
              }
          }];
     }
