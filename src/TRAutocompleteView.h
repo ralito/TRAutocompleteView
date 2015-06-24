@@ -39,7 +39,7 @@
 
 @property(nonatomic, assign) BOOL isLaunchedWithScanner;
 
-@property(readonly) id <TRSuggestionItem> selectedSuggestion;
+@property(nonatomic, strong) id <TRSuggestionItem> selectedSuggestion;
 @property(nonatomic, strong) NSMutableArray *suggestions;
 @property(copy) didAutocompletionBlock autocompletionBlock;
 

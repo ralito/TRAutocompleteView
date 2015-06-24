@@ -46,7 +46,7 @@ static const CGFloat   AUTOCOMPLETE_TOP_MARGIN_DEFAULT = 0.0f;
 
 @interface TRAutocompleteView () <UITableViewDelegate, UITableViewDataSource>
 
-@property(readwrite) id <TRSuggestionItem> selectedSuggestion;
+//@property(readwrite) id <TRSuggestionItem> selectedSuggestion;
 
 - (BOOL)isSearchTextField;
 
@@ -325,6 +325,15 @@ static const CGFloat   AUTOCOMPLETE_TOP_MARGIN_DEFAULT = 0.0f;
     UITableViewCell <TRAutocompletionCell> *completionCell = (UITableViewCell <TRAutocompletionCell> *) cell;
 
     id suggestion = self.suggestions[(NSUInteger) indexPath.row];
+
+    // Selected suggestion can be set before table is displayed from previously selected item
+    if (self.selectedSuggestion && self.selectedSuggestion == suggestion) {
+        completionCell.accessoryType = UITableViewCellAccessoryCheckmark;
+    }
+    // But we always want to default to None for potential dequed cells (IE, changing search results)
+    else {
+        completionCell.accessoryType = UITableViewCellAccessoryNone;
+    }
     NSAssert([suggestion conformsToProtocol:@protocol(TRSuggestionItem)], @"Suggestion item must conform TRSuggestionItem");
     id <TRSuggestionItem> suggestionItem = (id <TRSuggestionItem>) suggestion;
 
