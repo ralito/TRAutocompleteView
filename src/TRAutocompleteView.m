@@ -43,6 +43,7 @@ static const NSString* AUTOCOMPLETE_CELL_IDENTIFIER = @"TRAutocompleteCell";
 static const CGFloat   AUTOCOMPLETE_CELL_HEIGHT  = 64.0f;
 static const CGFloat   AUTOCOMPLETE_TABLEVIEW_INSET_BOTTOM = 10.0f;
 static const CGFloat   AUTOCOMPLETE_TOP_MARGIN_DEFAULT = 0.0f;
+static const int       AUTOCOMPLETE_PAGESIZE = 20;
 
 @interface TRAutocompleteView () <UITableViewDelegate, UITableViewDataSource>
 
@@ -145,19 +146,26 @@ static const CGFloat   AUTOCOMPLETE_TOP_MARGIN_DEFAULT = 0.0f;
 
         // Initiate new query based on current suggestions.count
         [self queryChangedWithSuccessBlock:^(NSArray *suggestionsReturned) {
-            NSMutableArray *indexPaths = [@[] mutableCopy];
-            NSInteger index = weakSelf.suggestions.count;
-            NSArray *newSuggestions = [suggestionsReturned copy];
 
-            for (id suggestion in newSuggestions) {
-                NSIndexPath *indexPath = [NSIndexPath indexPathForRow:index++ inSection:0];
-                [indexPaths addObject:indexPath];
-                [weakSelf.suggestions addObject:suggestion];
+            // We already have all the results, no need to append, just reset list
+            if (weakSelf.suggestions.count < AUTOCOMPLETE_PAGESIZE) {
+                [self refreshTableViewWithSuggestions:suggestionsReturned];
             }
-            // Index paths to be added and animated onto table
-            [_table beginUpdates];
-            [_table insertRowsAtIndexPaths:indexPaths withRowAnimation:UITableViewRowAnimationBottom];
-            [_table endUpdates];
+            // Need to append page results to new array
+            else {
+                NSMutableArray *indexPaths = [@[] mutableCopy];
+                NSInteger index = weakSelf.suggestions.count;
+
+                for (id suggestion in suggestionsReturned) {
+                    NSIndexPath *indexPath = [NSIndexPath indexPathForRow:index++ inSection:0];
+                    [indexPaths addObject:indexPath];
+                    [weakSelf.suggestions addObject:suggestion];
+                }
+                // Index paths to be added and animated onto table
+                [_table beginUpdates];
+                [_table insertRowsAtIndexPaths:indexPaths withRowAnimation:UITableViewRowAnimationBottom];
+                [_table endUpdates];
+            }
 
             // End loading animation
             [_table finishInfiniteScroll];
