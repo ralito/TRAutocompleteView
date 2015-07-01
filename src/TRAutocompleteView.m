@@ -149,7 +149,7 @@ static const int       AUTOCOMPLETE_PAGESIZE = 20;
 
             // We already have all the results, no need to append, just reset list
             if (weakSelf.suggestions.count < AUTOCOMPLETE_PAGESIZE) {
-                [self refreshTableViewWithSuggestions:suggestionsReturned];
+                [self refreshTableViewWithSuggestions:weakSelf.suggestions];
             }
             // Need to append page results to new array
             else {
