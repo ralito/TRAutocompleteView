@@ -53,6 +53,7 @@
                                     presentingIn:(UIViewController *)controller
                                whenSelectionMade:(didAutocompletionBlock)autocompleteBlock;
 
+- (void)showAutocompleteView;
 - (void)textFieldChanged:(id)sender;
 - (void)queryChangedWithSuccessBlock:(void (^)(NSArray *suggestions))successBlock;
 - (void)refreshTableViewWithSuggestions:(NSArray *)suggestions;

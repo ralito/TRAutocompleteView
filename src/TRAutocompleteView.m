@@ -39,15 +39,13 @@ UIViewAutoresizingFlexibleLeftMargin      | \
 UIViewAutoresizingFlexibleRightMargin     | \
 UIViewAutoresizingFlexibleTopMargin
 
-static const NSString* AUTOCOMPLETE_CELL_IDENTIFIER = @"TRAutocompleteCell";
-static const CGFloat   AUTOCOMPLETE_CELL_HEIGHT  = 64.0f;
-static const CGFloat   AUTOCOMPLETE_TABLEVIEW_INSET_BOTTOM = 10.0f;
-static const CGFloat   AUTOCOMPLETE_TOP_MARGIN_DEFAULT = 0.0f;
-static const int       AUTOCOMPLETE_PAGESIZE = 20;
+static const NSString* kAutocompleteCellIdentifier = @"TRAutocompleteCell";
+static const CGFloat   kAutocompleteCellHeight  = 64.0f;
+static const CGFloat   kAutocompleteTableViewInsetBottom = 20.0f;
+static const CGFloat   kAutocompleteTopMarginDefault = 0.0f;
+static const int       kAutocompleteQuerysetPagesizeDefault = 20;
 
 @interface TRAutocompleteView () <UITableViewDelegate, UITableViewDataSource>
-
-//@property(readwrite) id <TRSuggestionItem> selectedSuggestion;
 
 - (BOOL)isSearchTextField;
 
@@ -98,12 +96,12 @@ static const int       AUTOCOMPLETE_PAGESIZE = 20;
     self.suggestions = [NSMutableArray new];
 
     if (self) {
-        // Preset appearance and autoresizing setup
-        [self loadDefaults];
-        
+        // Preset appearance and autoresizing setup; set view frame correctly based on current desired size
+        [self setupView];
+
         // Initialize and configure table view, with autolayout constraints
         [self setupTableView];
-        
+
         // Setup action for callback when new search query returns results
         [_queryTextField addTarget:self action:@selector(textFieldChanged:) forControlEvents:UIControlEventEditingChanged];
         [[NSNotificationCenter defaultCenter] addObserver:self
@@ -121,14 +119,29 @@ static const int       AUTOCOMPLETE_PAGESIZE = 20;
 
 #pragma mark - View setup
 
-- (void)loadDefaults
+- (void)setupView
 {
     self.backgroundColor = [UIColor whiteColor];
     self.separatorColor = [UIColor lightGrayColor];
     self.separatorStyle = UITableViewCellSeparatorStyleSingleLine;
-    self.topMargin = AUTOCOMPLETE_TOP_MARGIN_DEFAULT;
-
+    self.topMargin = kAutocompleteTopMarginDefault;
     self.autoresizingMask = UIViewAutoresizingFlexibleMargins;
+
+    BOOL isIPad = (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad);
+
+    CGRect controlFrame;
+    if ([self isSearchTextField]) {
+        controlFrame = _queryTextField.superview.frame;
+    }
+    else {
+        controlFrame = _queryTextField.frame;
+    }
+
+    CGFloat contextViewHeight = _contextController.view.frame.size.height;
+    CGFloat contextViewWidth = _contextController.view.frame.size.width;
+    CGFloat calculatedY = controlFrame.origin.y + controlFrame.size.height + (isIPad ? 0 : StatusBarHeight());
+
+    self.frame = CGRectMake(controlFrame.origin.x, calculatedY, contextViewWidth, contextViewHeight-calculatedY);
 }
 
 - (void)setupTableView
@@ -144,15 +157,15 @@ static const int       AUTOCOMPLETE_PAGESIZE = 20;
     // Block executed when user scrolls to bottom of table
     [_table addInfiniteScrollWithHandler:^(id scrollView) {
 
-        // Initiate new query based on current suggestions.count
-        [self queryChangedWithSuccessBlock:^(NSArray *suggestionsReturned) {
-
-            // We already have all the results, no need to append, just reset list
-            if (weakSelf.suggestions.count < AUTOCOMPLETE_PAGESIZE) {
-                [self refreshTableViewWithSuggestions:weakSelf.suggestions];
-            }
-            // Need to append page results to new array
-            else {
+        // We already have all the results, no need to append, just refresh
+        if (weakSelf.suggestions.count < kAutocompleteQuerysetPagesizeDefault) {
+            [_table reloadData];
+            [_table finishInfiniteScroll];
+        }
+        else {
+            // Initiate new query based on current suggestions.count
+            [self queryChangedWithSuccessBlock:^(NSArray *suggestionsReturned) {
+                // Need to append page results to new array
                 NSMutableArray *indexPaths = [@[] mutableCopy];
                 NSInteger index = weakSelf.suggestions.count;
 
@@ -165,74 +178,72 @@ static const int       AUTOCOMPLETE_PAGESIZE = 20;
                 [_table beginUpdates];
                 [_table insertRowsAtIndexPaths:indexPaths withRowAnimation:UITableViewRowAnimationBottom];
                 [_table endUpdates];
-            }
 
-            // End loading animation
-            [_table finishInfiniteScroll];
-        }];
+                // End loading animation
+                [_table finishInfiniteScroll];
+            }];
+        }
     }];
 
-    // Enable scrolling and slight padding @ bottom of table view
-    UIEdgeInsets edgeInsets = UIEdgeInsetsMake(0, 0, AUTOCOMPLETE_TABLEVIEW_INSET_BOTTOM, 0);
-    [_table setContentInset:edgeInsets];
-    [_table setScrollIndicatorInsets:edgeInsets];
+    // Disable autoresizing in favor of autolayout with calculated row height
     _table.translatesAutoresizingMaskIntoConstraints = NO;
-    
+    _table.estimatedRowHeight = kAutocompleteCellHeight;
+    _table.rowHeight = UITableViewAutomaticDimension;
+
     // Add _table to autocompleteView to configure constraints
+    NSDictionary *views = NSDictionaryOfVariableBindings(_table);
+
     [self addSubview:_table];
     [self addConstraints:[NSLayoutConstraint
-                          constraintsWithVisualFormat:@"H:|-0-[_table]-0-|"
-                          options:NSLayoutFormatDirectionLeadingToTrailing
+                          constraintsWithVisualFormat:@"H:|[_table]|"
+                          options:0
                           metrics:nil
-                          views:NSDictionaryOfVariableBindings(_table)]];
+                          views:views]];
     [self addConstraints:[NSLayoutConstraint
-                          constraintsWithVisualFormat:@"V:|-0-[_table]-0-|"
-                          options:NSLayoutFormatDirectionLeadingToTrailing
+                          constraintsWithVisualFormat:@"V:|[_table]|"
+                          options:0
                           metrics:nil
-                          views:NSDictionaryOfVariableBindings(_table)]];
+                          views:views]];
+}
 
-    // show suggestions table view
+#pragma mark - Actions
+
+- (void)showAutocompleteView
+{
     if (!_visible) {
         [_contextController.view addSubview:self];
         _visible = YES;
     }
-    
 }
-
-#pragma mark - Actions
 
 - (void)textFieldChanged:(id)sender
 {
     // if textField is currently editing, we always want 0th start index of paged results
     NSNumber *startIndex = (_queryTextField.isEditing ? @(0) : @(self.suggestions.count));
+    BOOL shouldTriggerSearch = [_queryTextField.text length] >= _itemsSource.minimumCharactersToTrigger;
 
-    if ([_queryTextField.text length] >= _itemsSource.minimumCharactersToTrigger) {
+    if (shouldTriggerSearch) {
+        // Automatically fetch latest results and reset suggestions list
         [_itemsSource itemsFor:_queryTextField.text withStartIndex:startIndex whenReady:
-         ^(NSArray *suggestions)
-         {
-             if (_queryTextField.text.length
-                 < _itemsSource.minimumCharactersToTrigger) {
-                 self.suggestions = nil;
-             }
-             else {
-                 self.suggestions = suggestions;
-                 [_table reloadData];
-             }
+         ^(NSArray *suggestions) {
+            [self refreshTableViewWithSuggestions:suggestions];
          }];
     }
     else {
-        self.suggestions = nil;
-        [_table reloadData];
+        [self refreshTableViewWithSuggestions:nil];
     }
 }
 
 - (void)queryChangedWithSuccessBlock:(void (^)(NSArray *suggestions))successBlock
 {
-    if ([_queryTextField.text length] >= _itemsSource.minimumCharactersToTrigger) {
-        [_itemsSource itemsFor:_queryTextField.text withStartIndex:@(self.suggestions.count) whenReady:
+    NSNumber *startIndex = ((_queryTextField.isEditing || self.isLaunchedWithScanner) ? @(0) : @(self.suggestions.count));
+    BOOL shouldTriggerSearch = [_queryTextField.text length] >= _itemsSource.minimumCharactersToTrigger;
+
+    if (shouldTriggerSearch) {
+        [_itemsSource itemsFor:_queryTextField.text withStartIndex:startIndex whenReady:
          ^(NSArray *suggestions)
          {
-             // Scanner code matched == 1 OR _queryTextField matched == 1 - Select match!
+             // Scanner code matched == 1 - Select match!
              if (self.suggestions.count == 1) {                    
                   successBlock(suggestions);
              }
@@ -251,14 +262,17 @@ static const int       AUTOCOMPLETE_PAGESIZE = 20;
          }];
     }
     else {
-        self.suggestions = nil;
-        [_table reloadData];
+        [self refreshTableViewWithSuggestions:nil];
     }
 }
 
 - (void)refreshTableViewWithSuggestions:(NSArray *)suggestions
 {
-    self.suggestions = [suggestions mutableCopy];
+    if (suggestions)
+        self.suggestions = [suggestions mutableCopy];
+    else
+        self.suggestions = nil;
+
     [_table reloadData];
 }
 
@@ -266,40 +280,10 @@ static const int       AUTOCOMPLETE_PAGESIZE = 20;
 
 - (void)keyboardWillBeShown:(NSNotification *)notification
 {
-    BOOL isIPad = (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad);
-
-    CGRect controlFrame;
-    // Forces table view to entire width of view
-    // inheriting from the size of the UISearchBar included in the view controller
-    if ([self isSearchTextField]) {
-        controlFrame = _queryTextField.superview.frame;
+    if (!_visible) {
+        [_contextController.view addSubview:self];
+        _visible = YES;
     }
-    else {
-        controlFrame = _queryTextField.frame;
-    }
-
-    // All calculations below are to determine autocompleteView's frame,
-    // considering orientation and position of controlFrame (textField), statusBar,
-    // and keyboard height.
-    NSDictionary *info = [notification userInfo];
-    CGSize kbSize = [[info objectForKey:UIKeyboardFrameEndUserInfoKey] CGRectValue].size;
-
-    CGFloat contextViewHeight = _contextController.view.frame.size.height;
-    CGFloat calculatedY = controlFrame.origin.y + controlFrame.size.height + (isIPad ? 0 : StatusBarHeight());
-    CGFloat calculatedHeight = contextViewHeight - calculatedY - kbSize.height;
-
-    // Multiplier for dynamic height of iPad's FormSheet to resize view/tableView frame
-    if (isIPad)
-        calculatedHeight *= 1.6;
-
-    // Keyboard displayed over the top of TabBarController,
-    // so need to also add padding to height
-    calculatedHeight += _contextController.tabBarController.tabBar.frame.size.height;
-
-    self.frame = CGRectMake(controlFrame.origin.x,
-                            calculatedY,
-                            _contextController.view.frame.size.width,
-                            calculatedHeight);
 }
 
 - (void)keyboardWillHide:(NSNotification *)notification {}
@@ -311,16 +295,11 @@ static const int       AUTOCOMPLETE_PAGESIZE = 20;
     return self.suggestions.count;
 }
 
-- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
-{
-    return AUTOCOMPLETE_CELL_HEIGHT;
-}
-
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    id cell = [tableView dequeueReusableCellWithIdentifier:AUTOCOMPLETE_CELL_IDENTIFIER];
+    id cell = [tableView dequeueReusableCellWithIdentifier:kAutocompleteCellIdentifier];
     if (cell == nil)
-        cell = [_cellFactory createReusableCellWithIdentifier:AUTOCOMPLETE_CELL_IDENTIFIER];
+        cell = [_cellFactory createReusableCellWithIdentifier:kAutocompleteCellIdentifier];
     
     NSAssert([cell isKindOfClass:[UITableViewCell class]], @"Cell must inherit from UITableViewCell");
     NSAssert([cell conformsToProtocol:@protocol(TRAutocompletionCell)], @"Cell must conform TRAutocompletionCell");
@@ -346,6 +325,9 @@ static const int       AUTOCOMPLETE_PAGESIZE = 20;
         BOOL relationshipSelector = [suggestionItem respondsToSelector:@selector(objectIdentifier)];
         if (relationshipSelector && [[suggestionItem objectIdentifier] isEqualToNumber:[self.selectedSuggestion objectIdentifier]]) {
             completionCell.accessoryType = UITableViewCellAccessoryCheckmark;
+        }
+        else {
+            completionCell.accessoryType = UITableViewCellAccessoryNone;
         }
     }
 
