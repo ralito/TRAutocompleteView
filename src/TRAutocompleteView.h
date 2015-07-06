@@ -55,7 +55,7 @@
                                whenSelectionMade:(didAutocompletionBlock)autocompleteBlock;
 
 - (void)showAutocompleteView;
-- (void)textFieldChanged:(id)sender;
+- (void)queryChangedWithTextField;
 - (void)queryChangedWithSuccessBlock:(void (^)(NSArray *suggestions))successBlock;
 - (void)refreshTableViewWithSuggestions:(NSArray *)suggestions;
 - (BOOL)selectSingleMatch;

@@ -45,7 +45,7 @@ static const CGFloat   kAutocompleteTableViewInsetBottom = 20.0f;
 static const CGFloat   kAutocompleteTopMarginDefault = 0.0f;
 static const int       kAutocompleteQuerysetPagesizeDefault = 20;
 
-@interface TRAutocompleteView () <UITableViewDelegate, UITableViewDataSource>
+@interface TRAutocompleteView () <UITableViewDelegate, UITableViewDataSource, UITextFieldDelegate>
 
 - (BOOL)isSearchTextField;
 
@@ -57,6 +57,7 @@ static const int       kAutocompleteQuerysetPagesizeDefault = 20;
 
     __weak UITextField *_queryTextField;
     __weak UIViewController *_contextController;
+    NSString *_previousQueryText;
 
     UITableView *_table;
     id <TRAutocompleteItemsSource> _itemsSource;
@@ -89,6 +90,8 @@ static const int       kAutocompleteQuerysetPagesizeDefault = 20;
     self = [super initWithFrame:frame];
 
     _queryTextField = textField;
+    _queryTextField.delegate = self;
+
     _itemsSource = itemsSource;
     _cellFactory = factory;
     _contextController = controller;
@@ -110,14 +113,9 @@ static const int       kAutocompleteQuerysetPagesizeDefault = 20;
         [self addSubview:self.spinner];
 
         // Setup action for callback when new search query returns results
-        [_queryTextField addTarget:self action:@selector(textFieldChanged:) forControlEvents:UIControlEventEditingChanged];
         [[NSNotificationCenter defaultCenter] addObserver:self
                                                  selector:@selector(keyboardWillBeShown:)
                                                      name:UIKeyboardWillShowNotification
-                                                   object:nil];
-        [[NSNotificationCenter defaultCenter] addObserver:self
-                                                 selector:@selector(keyboardWillHide:)
-                                                     name:UIKeyboardWillHideNotification
                                                    object:nil];
     }
     
@@ -154,11 +152,13 @@ static const int       kAutocompleteQuerysetPagesizeDefault = 20;
 - (void)setupTableView
 {
     _table = [[UITableView alloc] initWithFrame:self.frame style:UITableViewStylePlain];
+    _table.delegate = self;
+    _table.dataSource = self;
+
+    // Default to clear separation while we load initial data
     _table.backgroundColor = [UIColor clearColor];
     _table.separatorColor = [UIColor clearColor];
     _table.separatorStyle = UITableViewCellSeparatorStyleNone;
-    _table.delegate = self;
-    _table.dataSource = self;
 
     __weak typeof(self) weakSelf = self;
     // Block executed when user scrolls to bottom of table
@@ -228,7 +228,7 @@ static const int       kAutocompleteQuerysetPagesizeDefault = 20;
     }
 }
 
-- (void)textFieldChanged:(id)sender
+- (void)queryChangedWithTextField
 {
     // if textField is currently editing, we always want 0th start index of paged results
     NSNumber *startIndex = (_queryTextField.isEditing ? @(0) : @(self.suggestions.count));
@@ -238,7 +238,7 @@ static const int       kAutocompleteQuerysetPagesizeDefault = 20;
         // Automatically fetch latest results and reset suggestions list
         [_itemsSource itemsFor:_queryTextField.text withStartIndex:startIndex whenReady:
          ^(NSArray *suggestions) {
-            [self refreshTableViewWithSuggestions:suggestions];
+             [self refreshTableViewWithSuggestions:suggestions];
          }];
     }
     else {
@@ -301,8 +301,6 @@ static const int       kAutocompleteQuerysetPagesizeDefault = 20;
         _visible = YES;
     }
 }
-
-- (void)keyboardWillHide:(NSNotification *)notification {}
 
 #pragma mark - Table view data source
 
@@ -381,6 +379,32 @@ static const int       kAutocompleteQuerysetPagesizeDefault = 20;
     [_queryTextField resignFirstResponder];
 }
 
+#pragma mark - Text field delegate
+
+- (BOOL)textField:(UITextField *)textField shouldChangeCharactersInRange:(NSRange)range replacementString:(NSString *)string
+{
+    // Maintain a reference to the previous query text
+    _previousQueryText = [textField.text stringByReplacingCharactersInRange:range withString:string];
+
+    SEL queryChangedWithTextField = @selector(queryChangedWithTextField);
+
+    // Cancel the previous search request
+    [[self class] cancelPreviousPerformRequestsWithTarget:self selector:queryChangedWithTextField object:nil];
+
+    // Perform the search in 0.25s; if the user enters addition data then this search will be cancelled by the previous line
+    [self performSelector:queryChangedWithTextField withObject:nil afterDelay:0.25];
+
+    return YES;
+}
+
+- (BOOL)textFieldShouldClear:(UITextField *)textField
+{
+    // if 'Clear' button is touched in search bar, we need to re-trigger search
+    [self queryChangedWithTextField];
+
+    return YES;
+}
+
 #pragma mark - Utility methods
 
 - (BOOL)isSearchTextField
@@ -398,16 +422,9 @@ CGFloat StatusBarHeight()
 
 - (void)dealloc
 {
-    [_queryTextField removeTarget:self action:@selector(textFieldChanged:) forControlEvents:UIControlEventEditingChanged];
-
     [[NSNotificationCenter defaultCenter]
      removeObserver:self
      name:UIKeyboardWillShowNotification
-     object:nil];
-
-    [[NSNotificationCenter defaultCenter]
-     removeObserver:self
-     name:UIKeyboardWillHideNotification
      object:nil];
 }
 
