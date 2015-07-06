@@ -102,6 +102,13 @@ static const int       kAutocompleteQuerysetPagesizeDefault = 20;
         // Initialize and configure table view, with autolayout constraints
         [self setupTableView];
 
+        // Add the spinner
+        self.spinner = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
+        self.spinner.hidesWhenStopped = YES;
+        self.spinner.frame = CGRectMake((self.frame.size.width/2) - (self.spinner.frame.size.width/2), self.frame.size.height/2 - self.frame.origin.y, self.spinner.frame.size.width, self.spinner.frame.size.height);
+        [self.spinner startAnimating];
+        [self addSubview:self.spinner];
+
         // Setup action for callback when new search query returns results
         [_queryTextField addTarget:self action:@selector(textFieldChanged:) forControlEvents:UIControlEventEditingChanged];
         [[NSNotificationCenter defaultCenter] addObserver:self
@@ -148,8 +155,8 @@ static const int       kAutocompleteQuerysetPagesizeDefault = 20;
 {
     _table = [[UITableView alloc] initWithFrame:self.frame style:UITableViewStylePlain];
     _table.backgroundColor = [UIColor clearColor];
-    _table.separatorColor = self.separatorColor;
-    _table.separatorStyle = self.separatorStyle;
+    _table.separatorColor = [UIColor clearColor];
+    _table.separatorStyle = UITableViewCellSeparatorStyleNone;
     _table.delegate = self;
     _table.dataSource = self;
 
@@ -160,6 +167,9 @@ static const int       kAutocompleteQuerysetPagesizeDefault = 20;
         // We already have all the results, no need to append, just refresh
         if (weakSelf.suggestions.count < kAutocompleteQuerysetPagesizeDefault) {
             [_table reloadData];
+
+            [self.spinner stopAnimating];
+
             [_table finishInfiniteScroll];
         }
         else {
@@ -178,6 +188,8 @@ static const int       kAutocompleteQuerysetPagesizeDefault = 20;
                 [_table beginUpdates];
                 [_table insertRowsAtIndexPaths:indexPaths withRowAnimation:UITableViewRowAnimationBottom];
                 [_table endUpdates];
+
+                [self.spinner stopAnimating];
 
                 // End loading animation
                 [_table finishInfiniteScroll];
@@ -236,7 +248,7 @@ static const int       kAutocompleteQuerysetPagesizeDefault = 20;
 
 - (void)queryChangedWithSuccessBlock:(void (^)(NSArray *suggestions))successBlock
 {
-    NSNumber *startIndex = ((_queryTextField.isEditing || self.isLaunchedWithScanner) ? @(0) : @(self.suggestions.count));
+    NSNumber *startIndex = (self.isLaunchedWithScanner ? @(0) : @(self.suggestions.count));
     BOOL shouldTriggerSearch = [_queryTextField.text length] >= _itemsSource.minimumCharactersToTrigger;
 
     if (shouldTriggerSearch) {
@@ -268,11 +280,15 @@ static const int       kAutocompleteQuerysetPagesizeDefault = 20;
 
 - (void)refreshTableViewWithSuggestions:(NSArray *)suggestions
 {
+    _table.separatorColor = self.separatorColor;
+    _table.separatorStyle = self.separatorStyle;
+
     if (suggestions)
         self.suggestions = [suggestions mutableCopy];
     else
         self.suggestions = nil;
 
+    [self.spinner stopAnimating];
     [_table reloadData];
 }
 

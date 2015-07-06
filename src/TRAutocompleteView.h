@@ -43,6 +43,7 @@
 @property(nonatomic, strong) NSMutableArray *suggestions;
 @property(copy) didAutocompletionBlock autocompletionBlock;
 
+@property(nonatomic, strong) UIActivityIndicatorView *spinner;
 @property(nonatomic) UIColor *separatorColor;
 @property(nonatomic) UITableViewCellSeparatorStyle separatorStyle;
 @property(nonatomic) CGFloat topMargin;
