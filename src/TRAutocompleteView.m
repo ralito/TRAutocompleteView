@@ -364,14 +364,19 @@ static const int       kAutocompleteQuerysetPagesizeDefault = 20;
     else {
         // Choices match directly
         BOOL choiceMatch = (self.selectedSuggestion == suggestionItem);
-        if (choiceMatch) {
-            completionCell.accessoryType = UITableViewCellAccessoryCheckmark;
-        }
 
         // Relationships need objectIdentifer comparison
         BOOL relationshipSelector = [suggestionItem respondsToSelector:@selector(objectIdentifier)];
-        if (relationshipSelector && [[suggestionItem objectIdentifier] isEqualToNumber:[self.selectedSuggestion objectIdentifier]]) {
+
+        if (choiceMatch) {
             completionCell.accessoryType = UITableViewCellAccessoryCheckmark;
+        }
+        else if (relationshipSelector && [[suggestionItem objectIdentifier] isEqualToNumber:[self.selectedSuggestion objectIdentifier]]) {
+            completionCell.accessoryType = UITableViewCellAccessoryCheckmark;
+        }
+        else {
+            // Default to no checkmark for dequeued cells
+            completionCell.accessoryType = UITableViewCellAccessoryNone;
         }
     }
 
