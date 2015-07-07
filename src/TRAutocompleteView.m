@@ -43,6 +43,8 @@ static const NSString* kAutocompleteCellIdentifier = @"TRAutocompleteCell";
 static const CGFloat   kAutocompleteCellHeight  = 64.0f;
 static const CGFloat   kAutocompleteTableViewInsetBottom = 20.0f;
 static const CGFloat   kAutocompleteTopMarginDefault = 0.0f;
+static const CGFloat   kAutocompleteBottomCellMarginMultiple = 3.0f;
+static const CGFloat   kAutocompleteQueryTriggerDelaySeconds = 0.25f;
 static const int       kAutocompleteQuerysetPagesizeDefault = 20;
 
 @interface TRAutocompleteView () <UITableViewDelegate, UITableViewDataSource, UITextFieldDelegate>
@@ -54,6 +56,7 @@ static const int       kAutocompleteQuerysetPagesizeDefault = 20;
 @implementation TRAutocompleteView
 {
     BOOL _visible;
+    CGFloat _currentKeyboardHeight;
 
     __weak UITextField *_queryTextField;
     __weak UIViewController *_contextController;
@@ -108,7 +111,10 @@ static const int       kAutocompleteQuerysetPagesizeDefault = 20;
         // Add the spinner
         self.spinner = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
         self.spinner.hidesWhenStopped = YES;
-        self.spinner.frame = CGRectMake((self.frame.size.width/2) - (self.spinner.frame.size.width/2), self.frame.size.height/2 - self.frame.origin.y, self.spinner.frame.size.width, self.spinner.frame.size.height);
+        self.spinner.frame = CGRectMake((self.frame.size.width/2) - (self.spinner.frame.size.width/2),
+                                        self.frame.size.height/2 - self.frame.origin.y,
+                                        self.spinner.frame.size.width,
+                                        self.spinner.frame.size.height);
         [self.spinner startAnimating];
         [self addSubview:self.spinner];
 
@@ -151,25 +157,29 @@ static const int       kAutocompleteQuerysetPagesizeDefault = 20;
 
 - (void)setupTableView
 {
-    _table = [[UITableView alloc] initWithFrame:self.frame style:UITableViewStylePlain];
-    _table.delegate = self;
-    _table.dataSource = self;
+    if (!_table) {
+        _table = [[UITableView alloc] initWithFrame:self.frame style:UITableViewStylePlain];
+        _table.delegate = self;
+        _table.dataSource = self;
 
-    // Default to clear separation while we load initial data
-    _table.backgroundColor = [UIColor clearColor];
-    _table.separatorColor = [UIColor clearColor];
-    _table.separatorStyle = UITableViewCellSeparatorStyleNone;
+        // Default to clear separation while we load initial data
+        _table.backgroundColor = [UIColor clearColor];
+        _table.separatorColor = [UIColor clearColor];
+        _table.separatorStyle = UITableViewCellSeparatorStyleNone;
+
+        // Disable autoresizing in favor of autolayout with calculated row height
+        _table.translatesAutoresizingMaskIntoConstraints = NO;
+        _table.estimatedRowHeight = kAutocompleteCellHeight;
+        _table.rowHeight = UITableViewAutomaticDimension;
+    }
 
     __weak typeof(self) weakSelf = self;
     // Block executed when user scrolls to bottom of table
     [_table addInfiniteScrollWithHandler:^(id scrollView) {
 
-        // We already have all the results, no need to append, just refresh
-        if (weakSelf.suggestions.count < kAutocompleteQuerysetPagesizeDefault) {
-            [_table reloadData];
-
+        // We already have all the results, no need to append, just end
+        if (weakSelf.suggestions.count <= kAutocompleteQuerysetPagesizeDefault) {
             [self.spinner stopAnimating];
-
             [_table finishInfiniteScroll];
         }
         else {
@@ -197,25 +207,22 @@ static const int       kAutocompleteQuerysetPagesizeDefault = 20;
         }
     }];
 
-    // Disable autoresizing in favor of autolayout with calculated row height
-    _table.translatesAutoresizingMaskIntoConstraints = NO;
-    _table.estimatedRowHeight = kAutocompleteCellHeight;
-    _table.rowHeight = UITableViewAutomaticDimension;
-
     // Add _table to autocompleteView to configure constraints
     NSDictionary *views = NSDictionaryOfVariableBindings(_table);
 
-    [self addSubview:_table];
-    [self addConstraints:[NSLayoutConstraint
-                          constraintsWithVisualFormat:@"H:|[_table]|"
-                          options:0
-                          metrics:nil
-                          views:views]];
-    [self addConstraints:[NSLayoutConstraint
-                          constraintsWithVisualFormat:@"V:|[_table]|"
-                          options:0
-                          metrics:nil
-                          views:views]];
+    if (!_table.superview) {
+        [self addSubview:_table];
+        [self addConstraints:[NSLayoutConstraint
+                              constraintsWithVisualFormat:@"H:|[_table]|"
+                              options:0
+                              metrics:nil
+                              views:views]];
+        [self addConstraints:[NSLayoutConstraint
+                              constraintsWithVisualFormat:@"V:|[_table]-40-|"
+                              options:0
+                              metrics:nil
+                              views:views]];
+    }
 }
 
 #pragma mark - Actions
@@ -278,6 +285,26 @@ static const int       kAutocompleteQuerysetPagesizeDefault = 20;
     }
 }
 
+- (void)refreshConstraints
+{
+    // Updates view's frame, table view content size, and informs
+    // view to update autolayout constraints as necessary
+    [self setupView];
+    [self refreshTableViewContentSize];
+    [self layoutIfNeeded];
+}
+
+- (void)refreshTableViewContentSize
+{
+    _table.contentSize = CGSizeMake(_table.frame.size.width, _table.contentSize.height);
+
+    // Update content inset related to keyboard size + (cell height * # cells)
+    CGFloat additionalCellPadding = _currentKeyboardHeight + (kAutocompleteCellHeight * kAutocompleteBottomCellMarginMultiple);
+    _table.contentInset = UIEdgeInsetsMake(0, 0, additionalCellPadding, 0);
+
+    [_table setInfiniteScrollIndicatorMargin:(kAutocompleteCellHeight / 2)];
+}
+
 - (void)refreshTableViewWithSuggestions:(NSArray *)suggestions
 {
     _table.separatorColor = self.separatorColor;
@@ -300,6 +327,12 @@ static const int       kAutocompleteQuerysetPagesizeDefault = 20;
         [_contextController.view addSubview:self];
         _visible = YES;
     }
+
+    NSDictionary *info = [notification userInfo];
+    CGSize kbSize = [[info objectForKey:UIKeyboardFrameEndUserInfoKey] CGRectValue].size;
+    _currentKeyboardHeight = kbSize.height;
+
+    [self refreshTableViewContentSize];
 }
 
 #pragma mark - Table view data source
@@ -339,9 +372,6 @@ static const int       kAutocompleteQuerysetPagesizeDefault = 20;
         BOOL relationshipSelector = [suggestionItem respondsToSelector:@selector(objectIdentifier)];
         if (relationshipSelector && [[suggestionItem objectIdentifier] isEqualToNumber:[self.selectedSuggestion objectIdentifier]]) {
             completionCell.accessoryType = UITableViewCellAccessoryCheckmark;
-        }
-        else {
-            completionCell.accessoryType = UITableViewCellAccessoryNone;
         }
     }
 
@@ -392,7 +422,7 @@ static const int       kAutocompleteQuerysetPagesizeDefault = 20;
     [[self class] cancelPreviousPerformRequestsWithTarget:self selector:queryChangedWithTextField object:nil];
 
     // Perform the search in 0.25s; if the user enters addition data then this search will be cancelled by the previous line
-    [self performSelector:queryChangedWithTextField withObject:nil afterDelay:0.25];
+    [self performSelector:queryChangedWithTextField withObject:nil afterDelay:kAutocompleteQueryTriggerDelaySeconds];
 
     return YES;
 }

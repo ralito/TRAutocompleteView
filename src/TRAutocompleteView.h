@@ -57,6 +57,8 @@
 - (void)showAutocompleteView;
 - (void)queryChangedWithTextField;
 - (void)queryChangedWithSuccessBlock:(void (^)(NSArray *suggestions))successBlock;
+- (void)refreshConstraints;
+- (void)refreshTableViewContentSize;
 - (void)refreshTableViewWithSuggestions:(NSArray *)suggestions;
 - (BOOL)selectSingleMatch;
 
