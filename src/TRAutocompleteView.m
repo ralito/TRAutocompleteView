@@ -179,7 +179,7 @@ static const int       kAutocompleteQuerysetPagesizeDefault = 20;
 
         // We already have all the results, no need to append, just end
         if (weakSelf.suggestions.count <= kAutocompleteQuerysetPagesizeDefault) {
-            [self.spinner stopAnimating];
+            [weakSelf.spinner stopAnimating];
             [_table finishInfiniteScroll];
         }
         else {
@@ -199,7 +199,7 @@ static const int       kAutocompleteQuerysetPagesizeDefault = 20;
                 [_table insertRowsAtIndexPaths:indexPaths withRowAnimation:UITableViewRowAnimationBottom];
                 [_table endUpdates];
 
-                [self.spinner stopAnimating];
+                [weakSelf.spinner stopAnimating];
 
                 // End loading animation
                 [_table finishInfiniteScroll];
@@ -238,7 +238,7 @@ static const int       kAutocompleteQuerysetPagesizeDefault = 20;
 - (void)queryChangedWithTextField
 {
     // if textField is currently editing, we always want 0th start index of paged results
-    NSNumber *startIndex = (_queryTextField.isEditing ? @(0) : @(self.suggestions.count));
+    NSNumber *startIndex = (_queryTextField.isEditing ? @0 : @(self.suggestions.count));
     BOOL shouldTriggerSearch = [_queryTextField.text length] >= _itemsSource.minimumCharactersToTrigger;
 
     if (shouldTriggerSearch) {
@@ -255,7 +255,7 @@ static const int       kAutocompleteQuerysetPagesizeDefault = 20;
 
 - (void)queryChangedWithSuccessBlock:(void (^)(NSArray *suggestions))successBlock
 {
-    NSNumber *startIndex = (self.isLaunchedWithScanner ? @(0) : @(self.suggestions.count));
+    NSNumber *startIndex = (self.isLaunchedWithScanner ? @0 : @(self.suggestions.count));
     BOOL shouldTriggerSearch = [_queryTextField.text length] >= _itemsSource.minimumCharactersToTrigger;
 
     if (shouldTriggerSearch) {
@@ -424,7 +424,7 @@ static const int       kAutocompleteQuerysetPagesizeDefault = 20;
     SEL queryChangedWithTextField = @selector(queryChangedWithTextField);
 
     // Cancel the previous search request
-    [[self class] cancelPreviousPerformRequestsWithTarget:self selector:queryChangedWithTextField object:nil];
+    [NSObject cancelPreviousPerformRequestsWithTarget:self selector:queryChangedWithTextField object:nil];
 
     // Perform the search in 0.25s; if the user enters addition data then this search will be cancelled by the previous line
     [self performSelector:queryChangedWithTextField withObject:nil afterDelay:kAutocompleteQueryTriggerDelaySeconds];
