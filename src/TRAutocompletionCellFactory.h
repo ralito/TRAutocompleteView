@@ -40,5 +40,6 @@
 @protocol TRAutocompletionCellFactory <NSObject>
 
 - (id <TRAutocompletionCell>)createReusableCellWithIdentifier:(NSString *)identifier;
+- (UIFont*)cellFont;
 
 @end
