@@ -40,7 +40,5 @@
 @protocol TRAutocompletionCellFactory <NSObject>
 
 - (id <TRAutocompletionCell>)createReusableCellWithIdentifier:(NSString *)identifier;
-- (id)initWithCellForegroundColor:(UIColor *)foregroundColor font:(UIFont*)font;
-- (UIFont*)cellFont;
 
 @end

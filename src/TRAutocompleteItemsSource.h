@@ -44,7 +44,5 @@ typedef void (^didAutocompletionBlock)(id <TRSuggestionItem>);
 - (NSUInteger)minimumCharactersToTrigger;
 - (void)itemsFor:(NSString *)query whenReady:(void (^)(NSArray *))suggestionsReady;
 
-@property (retain) id<TRSuggestionItem> selectedSuggestion;
-
 @end
 

@@ -8,7 +8,7 @@
 
 #import <UIKit/UIKit.h>
 #import "TRAutocompleteItemsSource.h"
-#import "FPPopoverController.h"
+#import <FPPopover/FPPopoverController.h>
 
 @interface SuggestionsList : UITableViewController 
 
